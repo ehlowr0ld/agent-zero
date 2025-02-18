@@ -1,10 +1,15 @@
 #!/bin/bash
 
+set -e
+
 # Install necessary packages
-apt-get install -y \
-    python3-dev python3-babel python3-venv \
+apt update && apt install -y \
+    python3.12-dev python3.12-venv \
     uwsgi uwsgi-plugin-python3 \
-    git build-essential libxslt-dev zlib1g-dev libffi-dev libssl-dev
+    git build-essential libxslt-dev zlib1g-dev libffi-dev libssl-dev \
+  && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
+
+pip install babel
 
 # Add the searxng system user
 useradd --shell /bin/bash --system \

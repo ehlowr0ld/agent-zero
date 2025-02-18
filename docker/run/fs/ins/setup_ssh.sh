@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Set up SSH
 mkdir /var/run/sshd && \
     # echo 'root:toor' | chpasswd && \

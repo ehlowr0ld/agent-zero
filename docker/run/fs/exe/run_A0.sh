@@ -14,13 +14,13 @@ while true; do
         --dockerized=true \
         --port=80 \
         --host="0.0.0.0" \
-        --code_exec_docker_enabled=false \
+        --code_exec_docker_enabled=true \
         --code_exec_ssh_enabled=true \
         # --code_exec_ssh_addr="localhost" \
         # --code_exec_ssh_port=22 \
         # --code_exec_ssh_user="root" \
         # --code_exec_ssh_pass="toor"
-    
+
     # Check the exit status
     if [ $? -ne 0 ]; then
         echo "A0 script exited with an error. Restarting..."

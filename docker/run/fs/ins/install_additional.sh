@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # searxng
 bash /ins/install_searxng.sh "$@"
 

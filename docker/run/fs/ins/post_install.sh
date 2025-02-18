@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Cleanup package list
-rm -rf /var/lib/apt/lists/*
+rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 apt-get clean

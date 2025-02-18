@@ -12,6 +12,13 @@ COPY ./fs/ /
 # pre installation steps
 RUN bash /ins/pre_install.sh $BRANCH
 
+ENV LC_ALL="en_US.UTF-8"
+ENV LC_CTYPE="en_US.UTF-8"
+
+RUN dpkg-reconfigure locales
+
+RUN python --version | grep 3.12
+
 # install additional software
 RUN bash /ins/install_additional.sh $BRANCH
 
@@ -25,8 +32,15 @@ RUN echo "cache buster $CACHE_DATE" && bash /ins/install_A02.sh $BRANCH
 # post installation steps
 RUN bash /ins/post_install.sh $BRANCH
 
+RUN chmod +x /exe/*.sh
+
+ENV SEARXNG_URL="http://127.0.0.1:8888"
+ENV SEARXNG_BIND_ADDRESS="0.0.0.0"
+ENV SEARXNG_PORT="8888"
+
 # Expose ports
 EXPOSE 22 80
+EXPOSE 8888
 
 # initialize runtime
 CMD ["/bin/bash", "-c", "/bin/bash /exe/initialize.sh $BRANCH"]

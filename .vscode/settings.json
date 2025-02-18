@@ -2,4 +2,5 @@
     "python.analysis.typeCheckingMode": "standard",
     "windsurfPyright.analysis.diagnosticMode": "workspace",
     "windsurfPyright.analysis.typeCheckingMode": "standard",
+    "ansible.python.interpreterPath": "/home/rafael/Workspace/Repos/rafael/a0-local/.venv/bin/python",
 }
