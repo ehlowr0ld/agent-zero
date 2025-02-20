@@ -14,7 +14,7 @@ while true; do
         --dockerized=true \
         --port=80 \
         --host="0.0.0.0" \
-        --code_exec_docker_enabled=true \
+        --code_exec_docker_enabled=false \
         --code_exec_ssh_enabled=true \
         # --code_exec_ssh_addr="localhost" \
         # --code_exec_ssh_port=22 \
