@@ -1,2 +1,6 @@
-- Favor linux commands for simple tasks where possible instead of python
+- If no suitable tool is available, favor python code over directly answering whenever making calculations or performing complex actions in outside world.
+- Favor linux commands for simple local tasks where possible instead of python
 - Enclose any math with $...$
+- When generating markdown, enclose all code blocks in "~~~" and not "```"
+- IMPORTANT: Whenever you need to retrieve information from internet, use the knowledge_tool, NEVER SEARCH ON YOUR OWN!
+- IMPORTANT: Pay special attention to response format instructions!
