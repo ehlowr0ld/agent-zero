@@ -2154,7 +2154,7 @@ a:active {
     display: none !important;
 }
 
-/* Add new styles for reasoning button */
+/* Add new styles for reasoning and deepsearchbutton */
 .ml-auto {
   margin-left: auto;
 }
@@ -2410,4 +2410,55 @@ a:active {
 .message-collapsible.collapsed .message-code-exe .message-heading::before,
 .message-collapsible.collapsed .message-browser .message-heading::before {
   transform: rotate(-90deg);
+}
+
+/* Add to the existing .chat-actions class or create it */
+.chat-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* Update the existing edit-button class */
+.edit-button {
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 0.1875rem;
+    color: var(--color-primary);
+    cursor: pointer;
+    padding: 0.125rem 0.5rem;
+    transition: all var(--transition-speed) ease-in-out;
+}
+
+.edit-button:hover {
+    border-color: var(--color-primary);
+    background-color: #32455690;
+}
+
+.chat-name {
+    cursor: text;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.chat-name:hover {
+    background-color: var(--color-secondary);
+}
+
+.chat-name-edit {
+    background: var(--color-input);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: -3px -5px;
+    width: calc(100% - 50px);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.chat-name-edit:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-input-focus);
 }

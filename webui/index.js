@@ -484,7 +484,11 @@ window.killChat = async function (id) {
             else setContext(generateGUID())
         }
 
-        if (found) sendJsonData("/chat_remove", { context: id });
+        if (found) {
+            // Delete the chat and its name
+            await sendJsonData("/chat_remove", { context: id });
+            // The backend will handle removing the chat name
+        }
 
         updateAfterScroll()
 
@@ -1146,3 +1150,75 @@ async function updateDeepSearchState(contextId) {
         console.error("Failed to update deep search state:", error);
     }
 }
+
+window.editChatName = function(id, event) {
+    // Get the name element
+    const nameElement = event?.target || document.querySelector(`.chat-name[data-chat-id="${id}"]`);
+    if (!nameElement) return;
+
+    // Set a flag to indicate we're editing
+    nameElement.setAttribute('data-editing', 'true');
+
+    // Create input element
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'chat-name-edit';
+    input.value = nameElement.textContent;
+
+    // Replace text with input
+    nameElement.textContent = '';
+    nameElement.appendChild(input);
+    input.focus();
+
+    // Handle save on enter or cancel on escape
+    input.addEventListener('keydown', async function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const newName = input.value.trim();
+            if (newName && newName !== nameElement.textContent) {
+                try {
+                    const response = await sendJsonData("/chat_rename", {
+                        chat_id: id,
+                        name: newName
+                    });
+
+                    if (response) {
+                        const chatsAD = Alpine.$data(chatsSection);
+                        const chat = chatsAD.contexts.find(c => c.id === id);
+                        if (chat) {
+                            chat.name = newName;
+                            chatsAD.contexts = [...chatsAD.contexts];
+                        }
+                        toast("Chat renamed successfully", "success");
+                    }
+                } catch (e) {
+                    toastFetchError("Error renaming chat", e);
+                }
+            }
+            nameElement.textContent = input.value;
+            nameElement.removeAttribute('data-editing');
+        } else if (e.key === 'Escape') {
+            nameElement.textContent = input.defaultValue;
+            nameElement.removeAttribute('data-editing');
+        }
+    });
+
+    // Handle save on blur
+    input.addEventListener('blur', function() {
+        // Small delay to allow for Enter key processing
+        setTimeout(() => {
+            if (nameElement.getAttribute('data-editing') === 'true') {
+                nameElement.textContent = input.value || input.defaultValue;
+                nameElement.removeAttribute('data-editing');
+            }
+        }, 100);
+    });
+
+    // Stop click event from bubbling to prevent chat selection
+    input.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+};
+
+// Remove the old renameChat function since we're using editChatName now
+window.renameChat = editChatName;
