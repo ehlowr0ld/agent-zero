@@ -1,4 +1,5 @@
 from python.helpers.tool import Tool, Response
+import langchain_community.document_transformers.markdownify
 
 class ResponseTool(Tool):
 
@@ -8,6 +9,6 @@ class ResponseTool(Tool):
     async def before_execution(self, **kwargs):
         self.log = self.agent.context.log.log(type="response", heading=f"{self.agent.agent_name}: Responding", content=self.args.get("text", ""))
 
-    
+
     async def after_execution(self, response, **kwargs):
         pass # do not add anything to the history or output
