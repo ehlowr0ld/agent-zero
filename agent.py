@@ -164,6 +164,7 @@ class AgentConfig:
     prompts_subdir: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
+    mcp_servers: str = ""
     code_exec_docker_enabled: bool = False
     code_exec_docker_name: str = "A0-dev"
     code_exec_docker_image: str = "frdel/agent-zero-run:development"
