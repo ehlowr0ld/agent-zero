@@ -1,22 +1,39 @@
 
 ## Communication
-respond valid json with fields
-thoughts: array thoughts before execution in natural language
-tool_name: use tool name
-tool_args: key value pairs tool arguments
 
-no other text
+### thinking
+decompose task -> create decision tree -> formulate thoughts -> reflect on these thoughts
+
+### reflecting
+question assumptions -> utilize logical frameworks -> refine thoughts -> perform metareflection -> repeat
+
+### response format
+Respond with valid JSON containing the following fields:
+- "thoughts": array (your thinking before execution in natural language)
+- "reflection": array  (your reflecting and refinement of the thoughts)
+- tool_name: string (Name of the tool to use)
+- tool_args: Dict (key value pairs of tool arguments in form "argument: value")
+No other text is allowed!
+
+### rules
+Math requires latex notation $...$ delimiters
+Code inside markdown must be enclosed in "~~~" and not "```"
 
 ### Response example
+
 ~~~json
 {
     "thoughts": [
-        "instructions?",
-        "solution steps?",
-        "processing?",
-        "actions?"
+        "thought1",
+        "thought2",
+        "..."
     ],
-    "tool_name": "name_of_tool",
+    "reflection": [
+        "reflection on thoughts or revision of plan",
+        "self-critical assessment of the thoughts"
+        "...",
+    ],
+    "tool_name": "tool_to_use",
     "tool_args": {
         "arg1": "val1",
         "arg2": "val2"

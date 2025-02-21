@@ -1,21 +1,24 @@
 ### code_execution_tool
+- Lets you execute terminal commands as well as python and nodejs code for computation or software tasks
+- Place code in "code" argument; escape carefully and indent properly
+- For dialogues (Y/N etc.), use "terminal" runtime with the input as "code"
+- If code runs long, use "output" runtime to wait, leave code as empty string ""
+- If code runs much too long, use "reset" runtime to kill process, leave code as empty string ""
+- Use "pip" "npm" "apt-get" in "terminal" to install packages
+- To make visible output from your code, use print() or console.log()
+- If tool outputs error, adjust code before retrying; knowledge_tool can help to solve the problems encountered
+- Don't use with other tools, only with thoughts and reflections; wait for response before using others
+- Check dependencies before running code
+IMPORTANT: never diretly use implicit print/output as first action — it doesn't work!
+IMPORTANT: check code for placeholders or demo data; replace with real variables; don't reuse snippets
 
-execute terminal commands python nodejs code for computation or software tasks
-place code in "code" arg; escape carefully and indent properly
-select "runtime" arg: "terminal" "python" "nodejs" "output" "reset"
-for dialogues (Y/N etc.), use "terminal" runtime next step, send answer
-if code runs long, use "output" to wait, "reset" to kill process
-use "pip" "npm" "apt-get" in "terminal" to install packages
-important: never use implicit print/output—it doesn't work!
-to output, use print() or console.log()
-if tool outputs error, adjust code before retrying; knowledge_tool can help
-important: check code for placeholders or demo data; replace with real variables; don't reuse snippets
-don't use with other tools except thoughts; wait for response before using others
-check dependencies before running code
-usage:
+#### Arguments:
+"runtime": literal - one of ["terminal" "python" "nodejs" "output" "reset"]
+"code": text - the code to execute in the specified runtime
 
-1 execute python code
+#### Usage:
 
+##### 1 execute python code
 ~~~json
 {
     "thoughts": [
@@ -23,6 +26,7 @@ usage:
         "I can use...",
         "Then I can...",
     ],
+    "reflection": ["..."],
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "python",
@@ -31,13 +35,14 @@ usage:
 }
 ~~~
 
-2 execute terminal command
+##### 2 execute terminal command
 ~~~json
 {
     "thoughts": [
         "Need to do...",
         "Need to install...",
     ],
+    "reflection": [],
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "terminal",
@@ -46,12 +51,13 @@ usage:
 }
 ~~~
 
-2.1 wait for output with long-running scripts
+###### 2.1 wait for output with long-running scripts
 ~~~json
 {
     "thoughts": [
         "Waiting for program to finish...",
     ],
+    "reflection": [],
     "tool_name": "code_execution_tool",
     "tool_args": {
         "runtime": "output",
@@ -59,7 +65,7 @@ usage:
 }
 ~~~
 
-2.2 reset terminal
+###### 2.2 reset terminal
 ~~~json
 {
     "thoughts": [
