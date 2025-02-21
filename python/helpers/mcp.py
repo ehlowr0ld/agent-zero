@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, Discriminator, Tag
 from typing import List, Dict, Optional, Any, Union, Literal, Annotated
+import dirtyjson
 from python.helpers.dirty_json import DirtyJson
 
 class MCPServerRemote(BaseModel):
@@ -31,6 +32,10 @@ class MCPConfig(BaseModel):
 def parse_mcp_config(config_str: str) -> MCPConfig:
     """Parse the MCP config string into a MCPConfig object."""
     try:
-        return MCPConfig(servers=DirtyJson.parse_string(config_str))
-    except Exception as e:
+      servers = dirtyjson.loads(config_str)
+    except Exception:
+      try:
+        servers = DirtyJson.parse_string(config_str)
+      except Exception as e:
         raise ValueError(f"Failed to parse MCP config: {e}")
+    return MCPConfig(servers=servers)

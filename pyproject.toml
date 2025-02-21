@@ -38,6 +38,7 @@ sentence-transformers = "^3.0.1"
 tiktoken = "^0.8.0"
 unstructured = "^0.15.13"
 unstructured-client = "^0.25.9"
+dirtyjson = "1.0.8"
 
 
 [build-system]
