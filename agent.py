@@ -16,6 +16,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.embeddings import Embeddings
 import python.helpers.log as Log
+import dirtyjson
 from python.helpers.dirty_json import DirtyJson
 from python.helpers.defer import DeferredTask
 from python.helpers import settings
@@ -689,7 +690,10 @@ class Agent:
         try:
             if len(stream) < 25:
                 return  # no reason to try
-            response = DirtyJson.parse_string(stream)
+            try:
+              response = dirtyjson.loads(stream)
+            except Exception as e:
+              response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
                 # log if result is a dictionary already
                 logItem.update(content=stream, kvps=response)
