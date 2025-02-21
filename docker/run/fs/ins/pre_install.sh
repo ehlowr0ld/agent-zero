@@ -5,6 +5,7 @@ set -o pipefail
 
 # Update and install necessary packages
 apt-get update && apt-get install -y \
+    -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
     python3.12 \
     python3-pip \
     python3.12-venv \
@@ -29,6 +30,7 @@ apt-get update && apt-get install -y \
     libcups2 \
     libasound2 \
     libasound2-data
+    nginx
 
 # Configure system alternatives so that /usr/bin/python3 points to Python 3.12
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
@@ -44,6 +46,9 @@ else
   # This will work but exit code is != 0 because pip is managed by apt
   python3 -m pip install --upgrade pip || true
 fi
+
+# Install npx for use by local MCP Servers
+npm i -g npx shx
 
 # Prepare SSH daemon
 bash /ins/setup_ssh.sh "$@"
