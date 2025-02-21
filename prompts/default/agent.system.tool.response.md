@@ -7,6 +7,9 @@ Always write full file paths if local files are mentioned
 #### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "...",
     ],

@@ -6,6 +6,9 @@ All adjustments made are permanent and memorized, at your disposition in the fut
 #### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "...",
     ],

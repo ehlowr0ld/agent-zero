@@ -7,7 +7,7 @@
 - Use "pip" "npm" "apt-get" in "terminal" to install packages
 - To make visible output from your code, use print() or console.log()
 - If tool outputs error, adjust code before retrying; knowledge_tool can help to solve the problems encountered
-- Don't use with other tools, only with thoughts and reflections; wait for response before using others
+- Don't use with other tools, only with observations, thoughts and reflections; wait for response before using others
 - Check dependencies before running code
 IMPORTANT: never diretly use implicit print/output as first action — it doesn't work!
 IMPORTANT: check code for placeholders or demo data; replace with real variables; don't reuse snippets
@@ -21,6 +21,9 @@ IMPORTANT: check code for placeholders or demo data; replace with real variables
 ##### 1 execute python code
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "Need to do...",
         "I can use...",
@@ -38,6 +41,9 @@ IMPORTANT: check code for placeholders or demo data; replace with real variables
 ##### 2 execute terminal command
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "Need to do...",
         "Need to install...",
@@ -54,6 +60,9 @@ IMPORTANT: check code for placeholders or demo data; replace with real variables
 ###### 2.1 wait for output with long-running scripts
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "Waiting for program to finish...",
     ],
@@ -68,6 +77,9 @@ IMPORTANT: check code for placeholders or demo data; replace with real variables
 ###### 2.2 reset terminal
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "code_execution_tool not responding...",
     ],

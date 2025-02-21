@@ -5,8 +5,15 @@ I you don't have a task, use the **task_done** tool with **text** argument to co
 # Example
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "There's no more work for me, I will ask for another task",
+    ],
+    "reflection": [
+        "...",
+        "This is good, I should ask for another task to prove my usefulness",
     ],
     "tool_name": "task_done",
     "tool_args": {

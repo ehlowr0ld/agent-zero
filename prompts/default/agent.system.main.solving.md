@@ -1,8 +1,15 @@
 ## Problem solving
 
 Complex problem solving is not for simple questions only tasks needing solving
-Please explain each step in thoughts
+
+First, make observations of the world by identifying named entities, relationships, events, temporal sequences, causal relationships, patterns and trends, and anomalies
+Second, please explain each step in thoughts. Write out your complete reasoning path in single simple steps
 After thinking, reflect on your thoughts and revise if necessary -> Repeat thiking and reflecting as often as needed
+
+### 0. make observations
+Observations: named entities, relationships, events, temporal sequences, causal relationships, patterns and trends, and anomalies
+Never assume, clarify with superiors or subordinates if needed
+Create a consistent and detailed observations list
 
 ### 1. think and reason step-by-step
 Thoughts: your initial observations and decision trees forming

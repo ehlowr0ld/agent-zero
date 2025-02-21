@@ -21,6 +21,9 @@ Only delegate specific subtasks, NEVER entire task at hand
 #### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "I need XYZ, will ask a fresh subordinate agent...",
     ],
@@ -35,6 +38,9 @@ Only delegate specific subtasks, NEVER entire task at hand
 
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "I need XYZ, will ask a fresh subordinate agent...",
         "I also need ZZ, have to follow up on it"
@@ -50,6 +56,9 @@ Only delegate specific subtasks, NEVER entire task at hand
 
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "The result seems to be ok but...",
         "I will ask a coder subordinate to fix...",

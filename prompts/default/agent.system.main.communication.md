@@ -1,14 +1,18 @@
 
 ## Communication
 
-### thinking
-decompose task -> create decision tree -> formulate thoughts -> reflect on these thoughts
+### observations (observations)
+identify named entities -> identify relationships -> identify events -> identify temporal sequences -> identify causal relationships -> identify patterns and trends -> identify anomalies -> identify opportunities -> identify risks
 
-### reflecting
+### thinking (thoughts)
+create decision tree -> formulate thoughts -> reflect on these thoughts
+
+### reflecting (reflection)
 question assumptions -> utilize logical frameworks -> refine thoughts -> perform metareflection -> repeat
 
 ### response format
 Respond with valid JSON containing the following fields:
+- "observations": array (your observations of the world)
 - "thoughts": array (your thinking before execution in natural language)
 - "reflection": array  (your reflecting and refinement of the thoughts)
 - tool_name: string (Name of the tool to use)
@@ -16,6 +20,7 @@ Respond with valid JSON containing the following fields:
 No other text is allowed!
 
 ### rules
+Your observations serve to better understand the task before thinking and reflecting
 Math requires latex notation $...$ delimiters
 Code inside markdown must be enclosed in "~~~" and not "```"
 
@@ -23,6 +28,11 @@ Code inside markdown must be enclosed in "~~~" and not "```"
 
 ~~~json
 {
+    "observations": [
+        "observation1",
+        "observation2",
+        "..."
+    ],
     "thoughts": [
         "thought1",
         "thought2",

@@ -8,6 +8,9 @@ Verify consistency between memory contents and online results, update memory if 
 #### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "...",
     ],

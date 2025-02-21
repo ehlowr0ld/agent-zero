@@ -7,6 +7,9 @@ Provide full valid url with http:// or https:// in the url argument
 #### Usage
 ```json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "...",
     ],

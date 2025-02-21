@@ -11,6 +11,13 @@ Dont use phrase "wait for instructions", in that case simply tell the agent to "
 
 ```json
 {
+  "observations": [
+    "This website is a search page.",
+    "The search box has a data-uid attribute of '98d'.",
+    "The search box is a text input field with the placeholder 'Search...'.",
+    "The search box has a data-uid attribute of '98d'.",
+    "The search box is a text input field with the placeholder 'Search...'.",
+  ],
   "thoughts": ["I need to log in to..."],
   "reflection": [
       "...",
@@ -25,6 +32,13 @@ Dont use phrase "wait for instructions", in that case simply tell the agent to "
 
 ```json
 {
+  "observations": [
+    "This website is a search page.",
+    "The search box has a data-uid attribute of '98d'.",
+    "The search box is a text input field with the placeholder 'Search...'.",
+    "The search box has a data-uid attribute of '98d'.",
+    "The search box is a text input field with the placeholder 'Search...'.",
+  ],
   "thoughts": ["I need to log in to..."],
   "reflection": ["..."],
   "tool_name": "browser_agent",
@@ -37,6 +51,9 @@ Dont use phrase "wait for instructions", in that case simply tell the agent to "
 
 ```json
 {
+  "observations": [
+    "The response contains a link to a login page.",
+  ],
   "thoughts": ["I now have everything I need..."],
   "reflection": ["..."],
   "tool_name": "browser_agent",

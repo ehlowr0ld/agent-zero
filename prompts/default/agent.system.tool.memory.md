@@ -19,6 +19,9 @@ Get memory content as metadata key-value pairs
 ##### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "Let's search my memory for...",
     ],
@@ -38,6 +41,9 @@ Save text to memory - it returns ID
 ##### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "I need to memorize...",
     ],
@@ -55,6 +61,9 @@ The IDs originate from memory_load and memory_save operations
 ##### Usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "I need to delete...",
     ],
@@ -75,6 +84,9 @@ Default threshold of 0.75 is active to prevent accidents
 usage:
 ~~~json
 {
+    "observations": [
+        "...",
+    ],
     "thoughts": [
         "Let's remove all memories about cars",
     ],
