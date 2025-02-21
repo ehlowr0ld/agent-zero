@@ -43,6 +43,7 @@ class Settings(TypedDict):
     agent_prompts_subdir: str
     agent_memory_subdir: str
     agent_knowledge_subdir: str
+    mcp_servers: str
 
     api_keys: dict[str, str]
 
@@ -511,6 +512,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
         }
     )
 
+    agent_fields.append(
+        {
+            "id": "mcp_servers",
+            "title": "MCP Servers",
+            "description": "MCP servers (json config), see ",
+            "type": "textarea",
+            "value": settings["mcp_servers"],
+        }
+    )
+
     agent_section: SettingsSection = {
         "id": "agent",
         "title": "Agent Config",
@@ -804,6 +815,7 @@ def get_default_settings() -> Settings:
         agent_prompts_subdir="default",
         agent_memory_subdir="default",
         agent_knowledge_subdir="custom",
+        mcp_servers="",
         rfc_auto_docker=True,
         rfc_url="localhost",
         rfc_password="",
