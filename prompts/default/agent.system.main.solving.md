@@ -21,9 +21,10 @@ Reflect about your thoughts and plans in the response reflections list
 
 ### 2. reflect and revise
 Reflect on your observations and thoughts
+Challenge your observations,thoughts and plans
 Reflect about daptations and corrections to thought process
 Adapt to the new insights
-Iterate
+Iterate (use noop_tool if needed)
 
 ### 3. recall memories and knowledge
 Check memories about solutions by using memory tool, use instruments and other tools -> always prefer instruments and other tools like knowledge_tool over memory tools
