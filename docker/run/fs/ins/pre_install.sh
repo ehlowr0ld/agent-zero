@@ -25,6 +25,9 @@ apt-get update && apt-get install -y \
     ca-certificates \
   && rm -rf /var/cache/apt/lists/* /var/lib/apt/lists/*
 
+# Install npx for executing MCP servers
+npm i -g npx
+
 update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1
 update-alternatives --install /usr/bin/python python /usr/bin/python3.11 2
 update-alternatives --set python /usr/bin/python3.12
