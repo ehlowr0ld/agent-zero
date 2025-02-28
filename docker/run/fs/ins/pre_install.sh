@@ -13,6 +13,7 @@ echo \
 
 # Update and install necessary packages
 apt-get update && apt-get install -y \
+    -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
     python3.12 \
     python3.12-venv \
     nodejs \
@@ -23,6 +24,7 @@ apt-get update && apt-get install -y \
     ffmpeg \
     locales \
     ca-certificates \
+    nginx \
   && rm -rf /var/cache/apt/lists/* /var/lib/apt/lists/*
 
 # Install npx and shx and tsc for installing/executing MCP servers

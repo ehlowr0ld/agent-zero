@@ -21,7 +21,7 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 
 # Install remaining A0 python packages
 pip install -r /git/agent-zero/requirements.txt  # this will temporarily downgrade playwright to 1.49.0
-pip install -r --no-deps /git/agent-zero/requirements-nodeps.txt  # this will install playwright 1.50.0 again which also has chrome preloaded
+pip install --no-deps -r /git/agent-zero/requirements-nodeps.txt  # this will install playwright 1.50.0 again which also has chrome preloaded
 
 # Preload A0
 python /git/agent-zero/preload.py --dockerized=true
