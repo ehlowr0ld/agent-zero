@@ -17,6 +17,7 @@ def initialize():
         limit_input=current_settings["chat_model_rl_input"],
         limit_output=current_settings["chat_model_rl_output"],
         kwargs=current_settings["chat_model_kwargs"],
+        vision=current_settings["chat_model_vision"],
     )
 
     # utility model from user settings
