@@ -25,6 +25,13 @@ apt-get update && apt-get install -y \
     locales \
     ca-certificates \
     nginx \
+    libgtk-3-0 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libasound2 \
+    libasound2-data \
   && rm -rf /var/cache/apt/lists/* /var/lib/apt/lists/*
 
 # Install npx and shx and tsc for installing/executing MCP servers
