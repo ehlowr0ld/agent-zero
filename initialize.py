@@ -14,6 +14,7 @@ def initialize():
         name=current_settings["chat_model_name"],
         ctx_length=current_settings["chat_model_ctx_length"],
         reasoning=current_settings["chat_model_reasoning"],
+        vision=current_settings["chat_model_vision"],
         limit_requests=current_settings["chat_model_rl_requests"],
         limit_input=current_settings["chat_model_rl_input"],
         limit_output=current_settings["chat_model_rl_output"],
