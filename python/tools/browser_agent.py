@@ -41,6 +41,7 @@ class State:
             config=browser_use.BrowserConfig(
                 headless=True,
                 disable_security=True,
+                extra_chromium_args=["--disable-web-security"],
             )
         )
 
