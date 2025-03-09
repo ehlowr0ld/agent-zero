@@ -22,14 +22,14 @@ apt-get update && apt-get install -y \
     tesseract-ocr \
     qpdf \
     libreoffice \
-    pandoc
+    pandoc \
     libgtk-3-0 \
     libnss3 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
     libcups2 \
     libasound2 \
-    libasound2-data
+    libasound2-data \
     nginx
 
 # Configure system alternatives so that /usr/bin/python3 points to Python 3.12
