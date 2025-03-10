@@ -19,6 +19,7 @@ Get memory content as metadata key-value pairs
 ##### Usage:
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -41,6 +42,7 @@ Save text to memory - it returns ID
 ##### Usage:
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -61,6 +63,7 @@ The IDs originate from memory_load and memory_save operations
 ##### Usage:
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -84,6 +87,7 @@ Default threshold of 0.75 is active to prevent accidents
 usage:
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],

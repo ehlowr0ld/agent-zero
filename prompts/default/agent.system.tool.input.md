@@ -6,6 +6,7 @@ This tool is not intended and does not work with browser
 #### Usage:
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],

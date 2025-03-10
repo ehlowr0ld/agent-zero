@@ -300,6 +300,10 @@ class Agent:
                     try:
                         # prepare LLM chain (model, system, history)
                         prompt = await self.prepare_prompt(loop_data=self.loop_data)
+                        heading = f"{self.agent_name}: Thinking"
+
+                        if not self.get_data('thinking_topic'):
+                            self.set_data('thinking_topic', "...")
 
                         # output that the agent is starting
                         PrintStyle(
@@ -307,15 +311,16 @@ class Agent:
                             font_color="green",
                             padding=True,
                             background_color="white",
-                        ).print(f"{self.agent_name}: Generating")
+                        ).print(f"{heading}: {self.get_data('thinking_topic') or '...'}")
                         log = self.context.log.log(
-                            type="agent", heading=f"{self.agent_name}: Generating"
+                            type="agent", heading=f"{heading}: {self.get_data('thinking_topic') or '...'}"
                         )
 
                         start = time.time()
                         ttft = ''
+
                         async def stream_callback(chunk: str, full: str):
-                            nonlocal ttft
+                            nonlocal ttft, heading
                             # output the agent response stream
                             if chunk:
                                 printer.stream(chunk)
@@ -324,12 +329,12 @@ class Agent:
                                     ttft = duration
                                 self.set_data('response_ttft', ttft)
                                 self.set_data('response_duration', duration)
-                                self.log_from_stream(full, log, duration, ttft)
+                                self.log_from_stream(full, log, heading, duration, ttft)
 
                         # store as last context window content
                         self.set_data(Agent.DATA_NAME_CTX_WINDOW, prompt.format())
 
-                        self.log_from_stream('', log, '00:00:00', '00:00:00')
+                        self.log_from_stream('', log, heading, '00:00:00', '00:00:00')
                         self.set_data('response_ttft', '00:00:00')
                         self.set_data('response_duration', '00:00:00')
                         agent_response = await self.call_chat_model(
@@ -742,22 +747,26 @@ class Agent:
                 type="error", content=f"{self.agent_name}: Message misformat"
             )
 
-    def log_from_stream(self, stream: str, logItem: Log.LogItem, duration: str, ttft: str):
+    def log_from_stream(self, stream: str, logItem: Log.LogItem, heading: str, duration: str, ttft: str):
         # We do not want to crash the loop because of a log error
         try:
             if len(stream) < 25:
                 return  # no reason to try
             try:
-              response = dirtyjson.loads(stream)
-            except Exception as e:
-              response = DirtyJson.parse_string(stream)
+                response = dirtyjson.loads(stream)
+            except Exception:
+                response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
                 response["duration"] = duration
                 response["time_to_first_token"] = ttft
             else:
                 response = {"duration": duration, "time_to_first_token": ttft}
+
+            if "topic" in response:
+                self.set_data('thinking_topic', response["topic"])
+
             # log if result is a dictionary already
-            logItem.update(content=stream, kvps=response)
+            logItem.update(heading=f"{heading}: {self.get_data('thinking_topic') or '...'}", content=stream, kvps=response)
         except Exception:
             pass
 
