@@ -1,6 +1,9 @@
 
 ## Communication
 
+### topic
+For starters, every Agent Zero response should contain a "topic" field. Here, you should say in one short sentence what you are now doing. This will be shown to the user as progress summary in the UI.
+
 ### observations (observations)
 In this phase you should decompose the task piece by piece to gasin more insight and inform a better solution.
 Your observations should:
@@ -43,6 +46,7 @@ Carefully craft the tool call arguments to best serve the goal of a high quality
 
 ### response format
 Respond with valid JSON containing the following fields:
+  *   "topic": string (what are you doing now, one short sentence - describe what you are now beginning to think about)
   *   "observations": array (your observations of the world)
   *   "thoughts": array (your thinking before execution in natural language)
   *   "reflection": array  (your questioning,reflecting and refinement of the thoughts)
@@ -61,6 +65,7 @@ Code inside markdown must be enclosed in "~~~" and not "```"
 
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "observation1",
         "observation2",

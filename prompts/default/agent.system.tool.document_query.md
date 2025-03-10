@@ -15,6 +15,7 @@ Additionally, you can pass a list of "queries" - in this case, the tool returns 
 ##### Request:
 ```json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -39,6 +40,7 @@ Additionally, you can pass a list of "queries" - in this case, the tool returns 
 ##### Request:
 ```json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],

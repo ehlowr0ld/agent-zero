@@ -28,6 +28,7 @@ Code inside markdown must be enclosed in "~~~" and not "```"
 
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "observation1",
         "observation2",

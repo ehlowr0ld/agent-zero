@@ -13,6 +13,7 @@ It is a tool the agent should use to correct its own reasoning mistakes or to ex
 #### Usage:
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -33,6 +34,7 @@ It is a tool the agent should use to correct its own reasoning mistakes or to ex
 
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -54,6 +56,7 @@ It is a tool the agent should use to correct its own reasoning mistakes or to ex
 
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -68,7 +71,6 @@ It is a tool the agent should use to correct its own reasoning mistakes or to ex
     "tool_args": {
         "query": "Imperative prompt in second person with clear instructions for the reasoning plan, result requirements and goals",
         "reasoning_effort" : "medium"
-
     }
 }
 ~~~

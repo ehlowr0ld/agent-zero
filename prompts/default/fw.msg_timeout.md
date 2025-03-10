@@ -5,6 +5,7 @@ I you don't have a task, use the **task_done** tool with **text** argument to co
 # Example
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],

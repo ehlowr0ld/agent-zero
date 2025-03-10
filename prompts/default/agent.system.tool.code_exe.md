@@ -21,6 +21,7 @@ IMPORTANT: check code for placeholders or demo data; replace with real variables
 ##### 1 execute python code
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -41,6 +42,7 @@ IMPORTANT: check code for placeholders or demo data; replace with real variables
 ##### 2 execute terminal command
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -60,6 +62,7 @@ IMPORTANT: check code for placeholders or demo data; replace with real variables
 ###### 2.1 wait for output with long-running scripts
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -77,6 +80,7 @@ IMPORTANT: check code for placeholders or demo data; replace with real variables
 ###### 2.2 reset terminal
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
