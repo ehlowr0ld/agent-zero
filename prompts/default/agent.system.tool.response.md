@@ -9,6 +9,7 @@ Consider any directions from the user about the form and contents of the respons
 #### Usage:
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],

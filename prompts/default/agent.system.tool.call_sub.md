@@ -21,6 +21,7 @@ Only delegate specific subtasks, NEVER entire task at hand
 #### Usage:
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -38,6 +39,7 @@ Only delegate specific subtasks, NEVER entire task at hand
 
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],
@@ -56,6 +58,7 @@ Only delegate specific subtasks, NEVER entire task at hand
 
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": [
         "...",
     ],

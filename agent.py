@@ -273,6 +273,10 @@ class Agent:
                     try:
                         # prepare LLM chain (model, system, history)
                         prompt = await self.prepare_prompt(loop_data=self.loop_data)
+                        heading = f"{self.agent_name}: Thinking"
+
+                        if not self.get_data('thinking_topic'):
+                            self.set_data('thinking_topic', "...")
 
                         # output that the agent is starting
                         PrintStyle(
@@ -280,20 +284,22 @@ class Agent:
                             font_color="green",
                             padding=True,
                             background_color="white",
-                        ).print(f"{self.agent_name}: Generating")
+                        ).print(f"{heading}: {self.get_data('thinking_topic') or '...'}")
                         log = self.context.log.log(
-                            type="agent", heading=f"{self.agent_name}: Generating"
+                            type="agent", heading=f"{heading}: {self.get_data('thinking_topic') or '...'}"
                         )
 
                         async def stream_callback(chunk: str, full: str):
+                            nonlocal heading
                             # output the agent response stream
                             if chunk:
                                 printer.stream(chunk)
-                                self.log_from_stream(full, log)
+                                self.log_from_stream(full, log, heading)
 
                         # store as last context window content
                         self.set_data(Agent.DATA_NAME_CTX_WINDOW, prompt.format())
 
+                        self.log_from_stream('', log, heading)
                         agent_response = await self.call_chat_model(
                             prompt, callback=stream_callback
                         )
@@ -685,15 +691,18 @@ class Agent:
                 type="error", content=f"{self.agent_name}: Message misformat"
             )
 
-    def log_from_stream(self, stream: str, logItem: Log.LogItem):
+    def log_from_stream(self, stream: str, logItem: Log.LogItem, heading: str):
+        # We do not want to crash the loop because of a log error
         try:
             if len(stream) < 25:
                 return  # no reason to try
             response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
+                if "topic" in response:
+                    self.set_data('thinking_topic', response["topic"])
                 # log if result is a dictionary already
-                logItem.update(content=stream, kvps=response)
-        except Exception as e:
+                logItem.update(heading=f"{heading}: {self.get_data('thinking_topic') or '...'}", content=stream, kvps=response)
+        except Exception:
             pass
 
     def get_tool(self, name: str, args: dict, message: str, **kwargs):

@@ -11,6 +11,7 @@ Dont use phrase "wait for instructions", in that case simply tell the agent to "
 
 ```json
 {
+  "topic": "One sentence description of what you are now thinking about...",
   "observations": [
     "This website is a search page.",
     "The search box has a data-uid attribute of '98d'.",
@@ -32,6 +33,7 @@ Dont use phrase "wait for instructions", in that case simply tell the agent to "
 
 ```json
 {
+  "topic": "One sentence description of what you are now thinking about...",
   "observations": [
     "This website is a search page.",
     "The search box has a data-uid attribute of '98d'.",
@@ -51,6 +53,7 @@ Dont use phrase "wait for instructions", in that case simply tell the agent to "
 
 ```json
 {
+  "topic": "One sentence description of what you are now thinking about...",
   "observations": [
     "The response contains a link to a login page.",
   ],

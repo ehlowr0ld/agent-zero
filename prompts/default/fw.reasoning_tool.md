@@ -3,8 +3,11 @@ The agent (You) requested to perform deep multistep reasoning about:
 !!! {{query}}
 
 Don't forget to follow correct formatting of your response as valid JSON!
+
+# Response format:
 ~~~json
 {
+    "topic": "One sentence description of what you are now thinking about...",
     "observations": ["...", "..."],
     "thoughts": ["...", "..."],
     "reflection": ["...", "..."],
