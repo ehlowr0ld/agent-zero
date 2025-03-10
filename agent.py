@@ -305,6 +305,9 @@ class Agent:
                         if not self.get_data('thinking_topic'):
                             self.set_data('thinking_topic', "...")
 
+                        if self.get_data('agent_responded') is None:
+                            self.set_data('agent_responded', False)
+
                         # output that the agent is starting
                         PrintStyle(
                             bold=True,
@@ -318,9 +321,10 @@ class Agent:
 
                         start = time.time()
                         ttft = ''
+                        last_object = None
 
                         async def stream_callback(chunk: str, full: str):
-                            nonlocal ttft, heading
+                            nonlocal ttft, heading, last_object
                             # output the agent response stream
                             if chunk:
                                 printer.stream(chunk)
@@ -329,7 +333,16 @@ class Agent:
                                     ttft = duration
                                 self.set_data('response_ttft', ttft)
                                 self.set_data('response_duration', duration)
-                                self.log_from_stream(full, log, heading, duration, ttft)
+
+                                current_object = self.log_from_stream(full, log, heading, duration, ttft)
+                                complete_response = True
+                                for key in ['topic', 'observations', 'thoughts', 'reflection', 'tool_name', 'tool_args']:
+                                    if key not in current_object:
+                                        complete_response = False
+                                if complete_response and last_object and current_object == last_object:
+                                    self.set_data('agent_responded', True)
+
+                                last_object = current_object
 
                         # store as last context window content
                         self.set_data(Agent.DATA_NAME_CTX_WINDOW, prompt.format())
@@ -647,11 +660,18 @@ class Agent:
             limiter.add(output=tokens.approximate_tokens(content))
             response += content
 
+            # here we might have set the agent_responded flag to True
             if callback:
                 await callback(content, response)
 
+            # if the agent has responded, we can break the streaming loop to forbid multiple json stanzas or plaintext comments
+            if self.get_data('agent_responded'):
+                PrintStyle(background_color="black", font_color="grey", padding=True).print("Agent full response received, breaking streaming loop")
+                break
+
         # reset reasoning config until next call to reasoning_tool
         # these were set by reasoning_tool.execute()
+        # we can not call this in message_loop_end extension because we could get called multiple times in one msg loop
         self.set_data("chat_model_reasoning_tokens", 0)
         self.set_data("chat_model_reasoning_effort", "none")
 
@@ -747,11 +767,11 @@ class Agent:
                 type="error", content=f"{self.agent_name}: Message misformat"
             )
 
-    def log_from_stream(self, stream: str, logItem: Log.LogItem, heading: str, duration: str, ttft: str):
+    def log_from_stream(self, stream: str, logItem: Log.LogItem, heading: str, duration: str, ttft: str) -> dict[str, Any]:
         # We do not want to crash the loop because of a log error
         try:
             if len(stream) < 25:
-                return  # no reason to try
+                return {}  # no reason to try
             try:
                 response = dirtyjson.loads(stream)
             except Exception:
@@ -767,8 +787,10 @@ class Agent:
 
             # log if result is a dictionary already
             logItem.update(heading=f"{heading}: {self.get_data('thinking_topic') or '...'}", content=stream, kvps=response)
+
+            return response
         except Exception:
-            pass
+            return {}
 
     def get_tool(self, name: str, args: dict, message: str, **kwargs):
         from python.tools.unknown import Unknown
