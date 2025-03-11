@@ -7,7 +7,12 @@ class ReasoningSet(ApiHandler):
         self, input: dict[str, Any], request: Request
     ) -> dict[str, Any] | Response:
         # input data
-        reasoning = True if input.get("reasoning", False) else False
+        reasoning = input.get("reasoning", "auto")
+        if isinstance(reasoning, bool):
+            # Handle legacy boolean input
+            reasoning = "on" if reasoning else "off"
+        elif reasoning not in ["off", "on", "auto"]:
+            reasoning = "auto"
         ctxid = input.get("context", "")
 
         # context instance - get or create
@@ -17,8 +22,13 @@ class ReasoningSet(ApiHandler):
         context.reasoning = reasoning
 
         # Return response with context id and state
+        state_messages = {
+            "off": "Reasoning set to OFF",
+            "on": "Reasoning set to ON",
+            "auto": "Reasoning set to AUTO (dynamic choice by model)"
+        }
         return {
-            "message": "Reasoning enabled." if reasoning else "Reasoning disabled.",
+            "message": state_messages[reasoning],
             "reasoning": reasoning,
             "context": context.id
         }

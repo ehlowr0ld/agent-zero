@@ -21,7 +21,7 @@ def get_main_prompt(agent: Agent):
 
 def get_tools_prompt(agent: Agent):
     prompt = get_prompt("agent.system.tools.md", agent)
-    if agent.context.reasoning:
+    if agent.context.reasoning != "off":
         prompt += '\n' + get_prompt("agent.system.tools_reasoning.md", agent)
     return prompt
 

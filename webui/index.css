@@ -2177,6 +2177,24 @@ a:active {
   text-shadow: 0 0 5px rgba(66, 136, 241, 0.8);
 }
 
+.auto-reasoning {
+  background: rgba(40, 167, 69, 0.15);
+  border: 1px solid rgba(40, 167, 69, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.auto-reasoning svg {
+  filter: drop-shadow(0 0 3px rgba(40, 167, 69, 0.8));
+}
+
+.auto-reasoning p {
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 5px rgba(40, 167, 69, 0.8);
+}
+
 .light-mode .active-reasoning {
   background: rgba(0, 120, 255, 0.15);
   border: 1px solid rgba(0, 120, 255, 0.7);
@@ -2187,9 +2205,19 @@ a:active {
   text-shadow: 0 0 5px rgba(66, 136, 241, 0.4);
 }
 
-.light-mode #reasoning_button:not(.active-reasoning) {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+.light-mode .auto-reasoning {
+  background: rgba(40, 167, 69, 0.15);
+  border: 1px solid rgba(40, 167, 69, 0.7);
+}
+
+.light-mode .auto-reasoning p {
+  color: #333;
+  text-shadow: 0 0 5px rgba(40, 167, 69, 0.4);
+}
+
+.light-mode #reasoning_button:not(.active-reasoning):not(.auto-reasoning) {
+  background: rgba(200, 200, 200, 0.15);
+  border: 1px solid rgba(100, 100, 100, 0.7);
   border-radius: 6px;
   padding: 5px 10px;
   transition: all 0.2s ease-in-out;
@@ -2204,7 +2232,7 @@ a:active {
 }
 
 /* Add styling for disabled reasoning state with white border and highlight */
-#reasoning_button:not(.active-reasoning) {
+#reasoning_button:not(.active-reasoning):not(.auto-reasoning) {
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 6px;

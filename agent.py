@@ -48,7 +48,7 @@ class AgentContext:
         self.paused = paused
         self.streaming_agent = streaming_agent
         self.task: DeferredTask | None = None
-        self.reasoning = False
+        self.reasoning = "auto"  # Changed default from "off" to "auto"
         self.deep_search = False
         AgentContext._counter += 1
         self.no = AgentContext._counter

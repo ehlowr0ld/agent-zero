@@ -902,7 +902,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Initialize Alpine.js store if Alpine is available
     if (window.Alpine) {
         Alpine.store('root', {
-            reasoning: false,
+            reasoning: "auto",
             deep_search: false
         });
 
@@ -915,7 +915,7 @@ document.addEventListener("DOMContentLoaded", function() {
         // If Alpine isn't loaded yet, wait for alpine:init event
         document.addEventListener('alpine:init', () => {
             Alpine.store('root', {
-                reasoning: false,
+                reasoning: "auto",
                 deep_search: false
             });
 
@@ -1012,13 +1012,15 @@ window.handleFileUpload = function(event) {
 }
 
 // Simple toggle reasoning function - minimally invasive
-window.toggleReasoning = async function(newState) {
+window.cycleReasoning = async function(currentState) {
     try {
         const contextId = getContext();
-        console.log("Toggling reasoning to:", newState, "for context:", contextId);
+        // Cycle through states: off -> on -> auto -> off
+        const nextState = currentState === "off" ? "on" : (currentState === "on" ? "auto" : "off");
+        console.log("Cycling reasoning to:", nextState, "for context:", contextId);
 
         const response = await sendJsonData("/reasoning_set", {
-            reasoning: newState,
+            reasoning: nextState,
             context: contextId
         });
 
@@ -1026,7 +1028,7 @@ window.toggleReasoning = async function(newState) {
 
         if (response && response.context === contextId) {
             // Get the actual state from the server response
-            const serverState = !!response.reasoning;
+            const serverState = response.reasoning;
             console.log("Setting Alpine store reasoning to:", serverState);
 
             // Set the global Alpine store reasoning state
@@ -1038,11 +1040,11 @@ window.toggleReasoning = async function(newState) {
             }
 
             // Show a single toast
-            toast(serverState ? "Reasoning enabled" : "Reasoning disabled", "success");
+            toast(response.message, "success");
         }
     } catch (error) {
-        console.error("Error toggling reasoning:", error);
-        toast("Failed to toggle reasoning", "error");
+        console.error("Error cycling reasoning:", error);
+        toast("Failed to cycle reasoning", "error");
     }
 }
 
@@ -1063,7 +1065,7 @@ async function updateReasoningState(contextId) {
 
         if (response && response.context === contextId) {
             // Get the actual state from the server response
-            const serverState = !!response.reasoning;
+            const serverState = response.reasoning;
             console.log("Setting Alpine store reasoning to:", serverState);
 
             // Set the global Alpine store reasoning state
