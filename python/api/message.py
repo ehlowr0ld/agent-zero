@@ -86,7 +86,7 @@ class Message(ApiHandler):
         )
 
         system_message = []
-        if context.reasoning:
+        if context.reasoning == "on":
             system_message_reasoning = context.agent0.parse_prompt(
                 "fw.msg_system_use_reasoning.md"
             )

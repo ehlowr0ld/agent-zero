@@ -426,8 +426,8 @@
 
                     <button class="text-button" id="reasoning_button"
                         x-data="{}"
-                        @click="window.toggleReasoning(!$store.root.reasoning)"
-                        :class="{ 'active-reasoning': $store.root.reasoning }">
+                        @click="window.cycleReasoning($store.root.reasoning)"
+                        :class="{ 'active-reasoning': $store.root.reasoning === 'on', 'auto-reasoning': $store.root.reasoning === 'auto' }">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" fill="currentColor">
                             <path d="M475.619,295.498l-41.406-87.766c0.109-2.625,0.203-5.266,0.203-7.906
                                 c0-110.359-89.469-199.828-199.828-199.828S34.744,89.467,34.744,199.826c0,62.063,28.297,117.5,72.672,154.156v70.641
@@ -454,7 +454,7 @@
                                 s18.188,3.641,24.813,10.281c6.625,6.625,10.266,15.438,10.266,24.813c0,9.359-3.641,18.172-10.266,24.797
                                 S242.494,236.311,233.119,236.311z"/>
                         </svg>
-                        <p x-text="$store.root.reasoning ? 'Reasoning: ON' : 'Reasoning: OFF'"></p>
+                        <p x-text="$store.root.reasoning === 'on' ? 'Reasoning: ON' : ($store.root.reasoning === 'auto' ? 'Reasoning: AUTO' : 'Reasoning: OFF')"></p>
                     </button>
 
                 </div>

@@ -27,7 +27,7 @@ def get_main_prompt(agent: Agent):
 
 def get_tools_prompt(agent: Agent):
     prompt = get_prompt("agent.system.tools.md", agent)
-    if agent.context.reasoning:
+    if agent.context.reasoning != "off":
         prompt += '\n' + get_prompt("agent.system.tools_reasoning.md", agent)
     if agent.config.chat_model.vision:
         prompt += '\n' + get_prompt("agent.system.tools_vision.md", agent)
