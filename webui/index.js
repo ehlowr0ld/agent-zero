@@ -245,7 +245,11 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
 
         // Add collapsible class for specific message types
         if (['agent', 'tool', 'code_exe', 'browser'].includes(type)) {
-            messageContainer.classList.add('message-collapsible', 'collapsed');
+            messageContainer.classList.add('message-collapsible');
+            // Check if messages should be collapsed by default
+            if (localStorage.getItem('collapseMessages') !== 'false') {
+                messageContainer.classList.add('collapsed');
+            }
         }
     }
 
@@ -551,6 +555,23 @@ window.toggleSpeech = function (isOn) {
     console.log("Speech:", isOn);
     localStorage.setItem('speech', isOn);
     if (!isOn) speech.stop()
+};
+
+window.toggleCollapseMessages = function (isCollapsed) {
+    console.log("Collapse messages:", isCollapsed);
+    localStorage.setItem('collapseMessages', isCollapsed);
+
+    // Get all collapsible messages
+    const collapsibleMessages = document.querySelectorAll('.message-collapsible');
+
+    // Toggle collapse state for all messages
+    collapsibleMessages.forEach(message => {
+        if (isCollapsed) {
+            message.classList.add('collapsed');
+        } else {
+            message.classList.remove('collapsed');
+        }
+    });
 };
 
 window.nudge = async function () {

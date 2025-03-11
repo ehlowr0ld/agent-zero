@@ -145,6 +145,14 @@
                                     <span class="slider"></span>
                                 </label>
                             </li>
+                            <li x-data="{ collapseMessages: localStorage.getItem('collapseMessages') != 'false' }"
+                                x-init="$watch('collapseMessages', val => toggleCollapseMessages(val))">
+                                <span class="switch-label">Autom. collapse messages</span>
+                                <label class="switch">
+                                    <input type="checkbox" x-model="collapseMessages">
+                                    <span class="slider"></span>
+                                </label>
+                            </li>
                             <li x-data="{ showThoughts: true }">
                                 <span>Show thoughts</span>
                                 <label class="switch">
