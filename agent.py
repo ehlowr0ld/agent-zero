@@ -735,20 +735,25 @@ class Agent:
             tool_name = tool_request.get("tool_name", "")
             tool_args = tool_request.get("tool_args", {})
 
-            try:
-                import python.helpers.mcp as mcp_helper
-                tool = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
-            except Exception as e:
-                tool = None
-                AgentContext.first().log.log(type="warning", content=f"Failed to get MCP tool: {e}", temp=True)
-                (
-                    PrintStyle(background_color="black", font_color="red", padding=True)
-                    .print(f"Failed to get MCP tool: {e}")
-                )
-                raise e
+            if "." in tool_name:
+                try:
+                    import python.helpers.mcp as mcp_helper
+                    tool = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
+                except Exception as e:
+                    tool = None
+                    AgentContext.first().log.log(type="warning", content=f"Failed to get MCP tool: {e}", temp=True)
+                    (
+                        PrintStyle(background_color="black", font_color="red", padding=True)
+                        .print(f"Failed to get MCP tool: {e}")
+                    )
+                    raise e
 
             if not tool:
-                tool = self.get_tool(tool_name, tool_args, msg)
+                tool_method = None
+                if ":" in tool_name:
+                    tool_name, tool_method = tool_name.split(":", 1)
+
+                tool = self.get_tool(name=tool_name, method=tool_method, args=tool_args, message=msg)
 
             await self.handle_intervention()  # wait if paused and handle intervention message if needed
             await tool.before_execution(**tool_args)
@@ -792,7 +797,7 @@ class Agent:
         except Exception:
             return {}
 
-    def get_tool(self, name: str, args: dict, message: str, **kwargs):
+    def get_tool(self, name: str, method: str | None, args: dict, message: str, **kwargs):
         from python.tools.unknown import Unknown
         from python.helpers.tool import Tool
 
@@ -800,7 +805,7 @@ class Agent:
             "python/tools", name + ".py", Tool
         )
         tool_class = classes[0] if classes else Unknown
-        return tool_class(agent=self, name=name, args=args, message=message, **kwargs)
+        return tool_class(agent=self, name=name, method=method, args=args, message=message, **kwargs)
 
     async def call_extensions(self, folder: str, **kwargs) -> Any:
         from python.helpers.extension import Extension

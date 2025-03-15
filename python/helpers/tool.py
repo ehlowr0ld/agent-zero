@@ -6,21 +6,23 @@ from python.helpers.print_style import PrintStyle
 
 @dataclass
 class Response:
-    message:str
+    message: str
     break_loop: bool
     attachments: list[str] = field(default_factory=list[str])
 
 
 class Tool:
 
-    def __init__(self, agent: Agent, name: str, args: dict[str,str], message: str, **kwargs) -> None:
+    def __init__(self, agent: Agent, name: str, method: str | None, args: dict[str, str], message: str, **kwargs) -> None:
         self.agent = agent
-        self.name = name
+        self.name = f"{name}:{method}" if method else name
+        self.method = method
         self.args = args
         self.message = message
 
+
     @abstractmethod
-    async def execute(self,**kwargs) -> Response:
+    async def execute(self, **kwargs) -> Response:
         pass
 
     async def before_execution(self, **kwargs):
