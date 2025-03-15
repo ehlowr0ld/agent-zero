@@ -672,7 +672,12 @@ class Agent:
         if tool_request is not None:
             tool_name = tool_request.get("tool_name", "")
             tool_args = tool_request.get("tool_args", {})
-            tool = self.get_tool(tool_name, tool_args, msg)
+
+            tool_method = None
+            if ":" in tool_name:
+                tool_name, tool_method = tool_name.split(":", 1)
+
+            tool = self.get_tool(name=tool_name, method=tool_method, args=tool_args, message=msg)
 
             await self.handle_intervention()  # wait if paused and handle intervention message if needed
             await tool.before_execution(**tool_args)
@@ -705,7 +710,7 @@ class Agent:
         except Exception:
             pass
 
-    def get_tool(self, name: str, args: dict, message: str, **kwargs):
+    def get_tool(self, name: str, method: str | None, args: dict, message: str, **kwargs):
         from python.tools.unknown import Unknown
         from python.helpers.tool import Tool
 
@@ -713,7 +718,7 @@ class Agent:
             "python/tools", name + ".py", Tool
         )
         tool_class = classes[0] if classes else Unknown
-        return tool_class(agent=self, name=name, args=args, message=message, **kwargs)
+        return tool_class(agent=self, name=name, method=method, args=args, message=message, **kwargs)
 
     async def call_extensions(self, folder: str, **kwargs) -> Any:
         from python.helpers.extension import Extension
