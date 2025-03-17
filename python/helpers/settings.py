@@ -503,7 +503,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "value": settings["agent_memory_subdir"],
             # "options": [
             #     {"value": subdir, "label": subdir}
-            #     for subdir in files.get_subdirectories("memory", exclude="embeddings")
+            #     for subdir in files.get_subdirectories("memory", exclude=["embeddings", "tasklists", "notepads"])
             # ],
         }
     )
