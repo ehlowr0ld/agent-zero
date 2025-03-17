@@ -1156,8 +1156,7 @@ pre {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  position: relative;
-  gap: 8px; /* Add consistent gap between buttons */
+  gap: var(--spacing-xs);
 }
 
 .text-button {
@@ -1166,7 +1165,7 @@ pre {
   border-radius: 5px;
   color: var(--color-text);
   font-family: "Rubik", Arial, Helvetica, sans-serif;
-  font-size: 0.7rem; /* Slightly larger font */
+  font-size: 0.7rem;
   padding: 6px var(--spacing-sm);
   cursor: pointer;
   opacity: 0.8;
@@ -1174,8 +1173,22 @@ pre {
   transition: all 0.3s;
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs); /* space between icon and text */
+  gap: var(--spacing-xs);
 }
+
+/* Group the buttons */
+.text-button:nth-child(1) { margin-right: var(--spacing-md); }  /* Pause button */
+.text-button:nth-child(2) { margin-right: var(--spacing-md); }  /* Import */
+.text-button:nth-child(3) { margin-right: var(--spacing-md); }  /* Files */
+.text-button:nth-child(4) { margin-right: var(--spacing-md); }  /* History */
+.text-button:nth-child(5) { margin-right: var(--spacing-md); }  /* Context */
+.text-button:nth-child(6) { margin-right: var(--spacing-md); }  /* Nudge */
+.text-button:nth-child(7) { margin-right: var(--spacing-md); }  /* Tasklist */
+.text-button:nth-child(8) { margin-right: auto; }  /* Notepad */
+.text-button:nth-child(9) { margin-right: var(--spacing-md); margin-left: auto;}  /* Deep Search */
+.text-button:nth-child(10) { margin-right: var(--spacing-md); }  /* Planning */
+.text-button:nth-child(11) { margin-right: var(--spacing-md); }  /* Reasoning */
+
 
 .text-button:hover {
   opacity: 1;
@@ -2215,26 +2228,17 @@ a:active {
   text-shadow: 0 0 5px rgba(40, 167, 69, 0.4);
 }
 
-.light-mode #reasoning_button:not(.active-reasoning):not(.auto-reasoning) {
-  background: rgba(200, 200, 200, 0.15);
-  border: 1px solid rgba(100, 100, 100, 0.7);
+#reasoning_button:not(.active-reasoning):not(.auto-reasoning) {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 6px;
   padding: 5px 10px;
   transition: all 0.2s ease-in-out;
 }
 
-/* Simplified button styles - no scaling effects */
-#reasoning_button {
-  width: auto;
-  height: auto;
-  margin-left: 8px;
-  padding: 5px 10px;
-}
-
-/* Add styling for disabled reasoning state with white border and highlight */
-#reasoning_button:not(.active-reasoning):not(.auto-reasoning) {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+.light-mode #reasoning_button:not(.active-reasoning):not(.auto-reasoning) {
+  background: rgba(200, 200, 200, 0.15);
+  border: 1px solid rgba(100, 100, 100, 0.7);
   border-radius: 6px;
   padding: 5px 10px;
   transition: all 0.2s ease-in-out;
@@ -2282,11 +2286,15 @@ a:active {
 .light-mode #deep_search_button:not(.active-deep-search) {
   background: rgba(200, 200, 200, 0.15);
   border: 1px solid rgba(100, 100, 100, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
 }
 
 /* Mobile styles with simplified approach */
 @media (max-width: 768px) {
   #reasoning_button,
+  #planning_button,
   #deep_search_button {
     padding: 4px 8px;
   }
@@ -2303,12 +2311,14 @@ a:active {
 /* Hide text labels on smaller screens to save space */
 @media (max-width: 640px) {
   #reasoning_button p,
+  #planning_button p,
   #deep_search_button p {
     display: none;
   }
 
   /* Add tooltip instead */
   #reasoning_button::after,
+  #planning_button::after,
   #deep_search_button::after {
     position: absolute;
     top: -25px;
@@ -2326,12 +2336,18 @@ a:active {
     left: 0;
   }
 
+  #planning_button::after {
+    content: "Toggle Planning";
+    left: 0;
+  }
+
   #deep_search_button::after {
     content: "Toggle Deep Search";
     right: 0;
   }
 
   #reasoning_button:hover::after,
+  #planning_button:hover::after,
   #deep_search_button:hover::after {
     opacity: 1;
   }
@@ -2341,6 +2357,7 @@ a:active {
 @media (max-width: 480px) {
   /* Simplified smaller screen adjustments */
   #reasoning_button,
+  #planning_button,
   #deep_search_button {
     padding: 3px 6px;
   }
@@ -2438,4 +2455,131 @@ a:active {
 .message-collapsible.collapsed .message-code-exe .message-heading::before,
 .message-collapsible.collapsed .message-browser .message-heading::before {
   transform: rotate(-90deg);
+}
+
+/* Planning button styling - align with reasoning button */
+.active-planning {
+  background: rgba(0, 120, 255, 0.15);
+  border: 1px solid rgba(0, 120, 255, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.active-planning svg {
+  filter: drop-shadow(0 0 3px rgba(66, 136, 241, 0.8));
+}
+
+.active-planning p {
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 5px rgba(66, 136, 241, 0.8);
+}
+
+.auto-planning {
+  background: rgba(40, 167, 69, 0.15);
+  border: 1px solid rgba(40, 167, 69, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.auto-planning svg {
+  filter: drop-shadow(0 0 3px rgba(40, 167, 69, 0.8));
+}
+
+.auto-planning p {
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 5px rgba(40, 167, 69, 0.8);
+}
+
+.light-mode .active-planning {
+  background: rgba(0, 120, 255, 0.15);
+  border: 1px solid rgba(0, 120, 255, 0.7);
+}
+
+.light-mode .active-planning p {
+  color: #333;
+  text-shadow: 0 0 5px rgba(66, 136, 241, 0.4);
+}
+
+.light-mode .auto-planning {
+  background: rgba(40, 167, 69, 0.15);
+  border: 1px solid rgba(40, 167, 69, 0.7);
+}
+
+.light-mode .auto-planning p {
+  color: #333;
+  text-shadow: 0 0 5px rgba(40, 167, 69, 0.4);
+}
+
+#planning_button:not(.active-planning):not(.auto-planning) {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.light-mode #planning_button:not(.active-planning):not(.auto-planning) {
+  background: rgba(200, 200, 200, 0.15);
+  border: 1px solid rgba(100, 100, 100, 0.7);
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Mobile styles for planning button */
+@media (max-width: 768px) {
+  #planning_button {
+    padding: 4px 8px;
+  }
+}
+
+/* Hide text labels on smaller screens to save space */
+@media (max-width: 640px) {
+  #planning_button p {
+    display: none;
+  }
+
+  /* Add tooltip instead */
+  #planning_button::after {
+    position: absolute;
+    top: -25px;
+    background: var(--color-panel);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    content: "Toggle Planning";
+    left: 0;
+  }
+
+  #planning_button:hover::after {
+    opacity: 1;
+  }
+}
+
+/* Simplified button styles - no scaling effects */
+#reasoning_button {
+  width: auto;
+  height: auto;
+  padding: 5px 10px;
+}
+
+/* Simplified button styles for planning - no scaling effects */
+#planning_button {
+  width: auto;
+  height: auto;
+  padding: 5px 10px;
+}
+
+/* Adding styles for deep search button */
+#deep_search_button {
+  width: auto;
+  height: auto;
+  padding: 5px 10px;
 }

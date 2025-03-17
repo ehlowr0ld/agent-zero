@@ -14,16 +14,22 @@ class SystemPrompt(Extension):
 
 
 def get_main_prompt(agent: Agent):
+    system_prompt = ""
     if agent.context.deep_search:
-        return get_prompt("deepsearch.system.main.md", agent)
-    return get_prompt("agent.system.main.md", agent)
+        system_prompt += get_prompt("deepsearch.system.main.md", agent)
+    else:
+        system_prompt += get_prompt("agent.system.main.md", agent)
+    if agent.context.planning != "off":
+        system_prompt += '\n' + get_prompt("agent.system.main.planning.no_include.md", agent)
+    return system_prompt
 
 
 def get_tools_prompt(agent: Agent):
     prompt = get_prompt("agent.system.tools.md", agent)
     if agent.context.reasoning != "off":
         prompt += '\n' + get_prompt("agent.system.tools_reasoning.md", agent)
-    prompt += '\n' + get_prompt("agent.system.tools_planning.md", agent)
+    if agent.context.planning != "off":
+        prompt += '\n' + get_prompt("agent.system.tools_planning.md", agent)
     return prompt
 
 

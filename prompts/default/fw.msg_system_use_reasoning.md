@@ -1,1 +1,1 @@
-!!! Use reasoning with 'reasoning_tool' to answer the user message 'user_message'.
+!!! If 'user_message' contains a hard reasoning task or is otherwise challenging problem with likely multistep solution, use reasoning with 'reasoning_tool' to answer the user message 'user_message'. You are encouraged to use 'reasoning_tool' whenever sensible at your discretion.

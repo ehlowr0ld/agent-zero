@@ -24,6 +24,30 @@ export async function openCtxWindowModal() {
     }
 }
 
+export async function openTaskListModal() {
+    try {
+        const taskList = await window.sendJsonData("/tasklist_get", { context: getContext() });
+        const data = JSON.stringify(taskList.content, null, 4);
+        const size = taskList.tokens
+        await showEditorModal(data, "json", `Task List ~${size} tokens`, "Task list for the current context.");
+    } catch (e) {
+        window.toastFetchError("Error fetching task list", e)
+        return
+    }
+}
+
+export async function openNotepadModal() {
+    try {
+        const notepad = await window.sendJsonData("/notepad_get", { context: getContext() });
+        const data = JSON.stringify(notepad.content, null, 4);
+        const size = notepad.tokens
+        await showEditorModal(data, "json", `Notepad ~${size} tokens`, "Notepad for the current context.");
+    } catch (e) {
+        window.toastFetchError("Error fetching notepad", e)
+        return
+    }
+}
+
 async function showEditorModal(data, type = "json", title, description = "") {
     // Generate the HTML with JSON Viewer container
     const html = `<div id="json-viewer-container"></div>`;
@@ -52,3 +76,5 @@ async function showEditorModal(data, type = "json", title, description = "") {
 
 window.openHistoryModal = openHistoryModal;
 window.openCtxWindowModal = openCtxWindowModal;
+window.openTaskListModal = openTaskListModal;
+window.openNotepadModal = openNotepadModal;
