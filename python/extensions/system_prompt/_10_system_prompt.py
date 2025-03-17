@@ -18,7 +18,6 @@ class SystemPrompt(Extension):
         system_prompt.append(mcp_tools)
 
 
-
 def get_main_prompt(agent: Agent):
     if agent.context.deep_search:
         return get_prompt("deepsearch.system.main.md", agent)
@@ -31,6 +30,7 @@ def get_tools_prompt(agent: Agent):
         prompt += '\n' + get_prompt("agent.system.tools_reasoning.md", agent)
     if agent.config.chat_model.vision:
         prompt += '\n' + get_prompt("agent.system.tools_vision.md", agent)
+    prompt += '\n' + get_prompt("agent.system.tools_planning.md", agent)
     return prompt
 
 
