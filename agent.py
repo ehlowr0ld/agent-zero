@@ -26,6 +26,8 @@ from python.helpers.defer import DeferredTask
 from python.helpers import settings
 from python.helpers.settings import Settings
 from models import ModelProvider
+from python.helpers.tasklist import TaskList
+from python.helpers.notepad import Notepad
 from typing import Callable
 from python.helpers.history import OutputMessage
 
@@ -56,6 +58,8 @@ class AgentContext:
         self.task: DeferredTask | None = None
         self.reasoning = "auto"  # Changed default from "off" to "auto"
         self.deep_search = False
+        self.tasklist = TaskList.get_instance(self.id)
+        self.notepad = Notepad.get_instance(self.id)
         AgentContext._counter += 1
         self.no = AgentContext._counter
 
@@ -91,6 +95,8 @@ class AgentContext:
         self.agent0 = Agent(0, self.config, self)
         self.streaming_agent = None
         self.paused = False
+        self.tasklist.clear()
+        self.notepad.clear()
 
     def nudge(self):
         self.kill_process()
@@ -100,7 +106,7 @@ class AgentContext:
         else:
             current_agent = self.agent0
 
-        self.task =self.run_task(current_agent.monologue)
+        self.task = self.run_task(current_agent.monologue)
         return self.task
 
     def communicate(self, msg: "UserMessage", broadcast_level: int = 1):

@@ -1,9 +1,9 @@
 from python.helpers.api import ApiHandler, Input, Output, Request, Response
-
-
-from agent import AgentContext
 from python.helpers import persist_chat
 from python.api.chat_rename import ChatNames
+from python.helpers.tasklist import TaskList
+from python.helpers.notepad import Notepad
+from agent import AgentContext
 
 
 class RemoveChat(ApiHandler):
@@ -17,6 +17,12 @@ class RemoveChat(ApiHandler):
         # Remove the chat name mapping
         chat_names = ChatNames.get_instance()
         chat_names.remove_chat(ctxid)
+
+        # delete tasklist of this context
+        TaskList.delete_instance(ctxid)
+
+        # delete notepad of this context
+        Notepad.delete_instance(ctxid)
 
         return {
             "message": "Context removed.",
