@@ -390,6 +390,7 @@ async function poll() {
         // Important: Update Alpine store with reasoning and deep search states for the current context
         Alpine.store('root', {
             reasoning: response.reasoning,
+            planning: response.planning,
             deep_search: response.deep_search
         });
 
@@ -928,12 +929,14 @@ document.addEventListener("DOMContentLoaded", function() {
     if (window.Alpine) {
         Alpine.store('root', {
             reasoning: "auto",
+            planning: "auto",
             deep_search: false
         });
 
         // Initialize reasoning and deep search states for current context
         setTimeout(() => {
             updateReasoningState();
+            updatePlanningState();
             updateDeepSearchState();
         }, 500); // Small delay to ensure context is loaded
     } else {
@@ -941,12 +944,14 @@ document.addEventListener("DOMContentLoaded", function() {
         document.addEventListener('alpine:init', () => {
             Alpine.store('root', {
                 reasoning: "auto",
+                planning: "auto",
                 deep_search: false
             });
 
             // Initialize reasoning and deep search states for current context
             setTimeout(() => {
                 updateReasoningState();
+                updatePlanningState();
                 updateDeepSearchState();
             }, 500); // Small delay to ensure context is loaded
         });
@@ -1245,3 +1250,73 @@ window.editChatName = function(id, event) {
 
 // Remove the old renameChat function since we're using editChatName now
 window.renameChat = editChatName;
+
+// Planning cycle function
+window.cyclePlanning = async function(currentState) {
+    try {
+        const contextId = getContext();
+        // Cycle through states: off -> on -> auto -> off
+        const nextState = currentState === "off" ? "on" : (currentState === "on" ? "auto" : "off");
+        console.log("Cycling planning to:", nextState, "for context:", contextId);
+
+        const response = await sendJsonData("/planning_set", {
+            planning: nextState,
+            context: contextId
+        });
+
+        console.log("Server response:", response);
+
+        if (response && response.context === contextId) {
+            // Get the actual state from the server response
+            const serverState = response.planning;
+            console.log("Setting Alpine store planning to:", serverState);
+
+            // Set the global Alpine store planning state
+            if (window.Alpine) {
+                const store = Alpine.store('root');
+                if (store) {
+                    store.planning = serverState;
+                }
+            }
+
+            // Show a single toast
+            toast(response.message, "success");
+        }
+    } catch (error) {
+        console.error("Error cycling planning:", error);
+        toast("Failed to cycle planning", "error");
+    }
+}
+
+// Function to update planning state when switching contexts
+async function updatePlanningState(contextId) {
+    try {
+        if (!contextId) {
+            contextId = getContext();
+        }
+        console.log("Updating planning state for context:", contextId);
+
+        // Fetch the current planning state from the server
+        const response = await sendJsonData("/planning_get", {
+            context: contextId
+        });
+
+        console.log("Planning state response:", response);
+
+        if (response && response.context === contextId) {
+            // Get the actual state from the server response
+            const serverState = response.planning;
+            console.log("Setting Alpine store planning to:", serverState);
+
+            // Set the global Alpine store planning state
+            if (window.Alpine) {
+                const store = Alpine.store('root');
+                if (store) {
+                    store.planning = serverState;
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Failed to update planning state:", error);
+    }
+}
