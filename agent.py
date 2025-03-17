@@ -742,6 +742,7 @@ class Agent:
             tool_name = tool_request.get("tool_name", "")
             tool_args = tool_request.get("tool_args", {})
 
+            tool = None
             if "." in tool_name:
                 try:
                     import python.helpers.mcp as mcp_helper
