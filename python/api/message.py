@@ -91,6 +91,11 @@ class Message(ApiHandler):
                 "fw.msg_system_use_reasoning.md"
             )
             system_message.append(system_message_reasoning)
+        if context.planning == "on":
+            system_message_planning = context.agent0.parse_prompt(
+                "fw.msg_system_use_planning.md"
+            )
+            system_message.append(system_message_planning)
 
         return context.communicate(
             UserMessage(message=message, attachments=attachment_paths, system_message=system_message)

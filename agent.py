@@ -57,6 +57,7 @@ class AgentContext:
         self.streaming_agent = streaming_agent
         self.task: DeferredTask | None = None
         self.reasoning = "auto"  # Changed default from "off" to "auto"
+        self.planning = "auto"   # New property for planning with default "auto"
         self.deep_search = False
         self.tasklist = TaskList.get_instance(self.id)
         self.notepad = Notepad.get_instance(self.id)

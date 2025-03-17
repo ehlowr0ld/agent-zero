@@ -124,9 +124,11 @@ class TaskList(BaseModel):
                 self.tasks[task1_idx], self.tasks[task2_idx] = self.tasks[task2_idx], self.tasks[task1_idx]
                 self._save()
 
-    def get_tasks_for_rendering(self, status: list[TaskStatus] | None = None) -> list[dict]:
-        # dont include "logs" field to reduce cognitive load when rendering whole list
-        return [task.model_dump(mode="json", include={"uid", "name", "description", "status"}) for task in self.get_tasks(status)]
+    def get_tasks_for_rendering(self, status: list[TaskStatus] | None = None, include_logs: bool = False) -> list[dict]:
+        fields = {"uid", "name", "description", "status"}
+        if include_logs:
+            fields.add("logs")
+        return [task.model_dump(mode="json", include=fields) for task in self.get_tasks(status)]
 
     def get_tasks(self, status: list[TaskStatus] | None = None) -> list[Task]:
         return [task for task in self.tasks if status is None or task.status in status]

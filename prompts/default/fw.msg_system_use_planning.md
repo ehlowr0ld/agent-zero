@@ -1,0 +1,1 @@
+!!! If 'user_message' contains a complex or lengthy task or is otherwise requiring planning and structured data management and note-taking, use 'notepad'- and 'tasklist'-related tools to plan the execution and to take notes along the way to better retain important information. You are encouraged to use notepad and tasklist whenever sensible at your discretion.
