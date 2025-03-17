@@ -340,10 +340,10 @@ class MCPConfig(BaseModel):
                     return server.has_tool(tool_name_part)
             return False
 
-    def get_tool(self, agent: Any, tool_name: str) -> MCPTool | None:
+    def get_tool(self, agent: Any, tool_name: str, tool_args: Dict[str, Any]) -> MCPTool | None:
         if not self.has_tool(tool_name):
             return None
-        return MCPTool(agent, tool_name, {}, "", **{})
+        return MCPTool(agent, tool_name, None, tool_args, "", **{})
 
     async def call_tool(self, tool_name: str, input_data: Dict[str, Any]) -> CallToolResult:
         """Call a tool with the given input data"""
