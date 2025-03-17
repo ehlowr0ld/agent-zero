@@ -746,7 +746,7 @@ class Agent:
             if "." in tool_name:
                 try:
                     import python.helpers.mcp as mcp_helper
-                    tool = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
+                    tool = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name, tool_args)
                 except Exception as e:
                     tool = None
                     AgentContext.first().log.log(type="warning", content=f"Failed to get MCP tool: {e}", temp=True)
