@@ -444,7 +444,7 @@ def output_langchain(messages: list[OutputMessage]) -> list[BaseMessage]:
                 f"Contents: {json.dumps(contents, indent=2)}"
             )
 
-            template: list[dict[str, str]] = []  # type: ignore
+            human_message_parts: list[dict[str, str]] = []  # type: ignore
             message = ""
             images = {}
             for _, content in enumerate(contents):
@@ -471,13 +471,13 @@ def output_langchain(messages: list[OutputMessage]) -> list[BaseMessage]:
                                     images[attachment] = f"data:{mime_type};base64,{base64_encoded_data}"
 
             if message:
-                template.append({"type": "text", "text": message})
+                human_message_parts.append({"type": "text", "text": message})
             if images:
                 for _, image in images.items():
-                    template.append({"type": "image_url", "image_url": image})
-            if template:
-                # only jinja2 is safe for json, both mustache({{...}}) and f-string({...}) are not
-                result.append(HumanMessagePromptTemplate.from_template(template=template, partial_variables={}, template_format="jinja2"))  # type: ignore
+                    human_message_parts.append({"type": "image_url", "image_url": image})
+            if human_message_parts:
+                human_message_obj = HumanMessage(content=human_message_parts)  # type: ignore
+                result.append(human_message_obj)
 
     PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
         f"Result: {result}"
