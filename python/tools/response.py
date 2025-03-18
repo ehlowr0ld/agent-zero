@@ -1,20 +1,42 @@
 from python.helpers.tool import Tool, Response
-import langchain_community.document_transformers.markdownify
 import time
+import json
 
 
 class ResponseTool(Tool):
 
-    async def execute(self,**kwargs):
+    async def execute(self, **kwargs):
+        valid_methods = ["feedback", "final"]
+        if self.method not in valid_methods:
+            return Response(
+                message=self.agent.read_prompt(
+                    "fw.tool_call.invalid_method.md",
+                    tool_name=self.name,
+                    tool_method=self.method,
+                    valid_methods=json.dumps(valid_methods, indent=4),
+                ),
+                break_loop=False,
+            )
+
+        return await getattr(self, self.method)()
+
+    async def feedback(self):
+        return Response(message=self.args["text"], break_loop=False)
+
+    async def final(self):
         return Response(message=self.args["text"], break_loop=True)
 
     async def before_execution(self, **kwargs):
         monolog_duration = time.strftime("%H:%M:%S", time.gmtime(time.time() - int(self.agent.get_data('monolog_start'))))
+        heading = f"{self.agent.agent_name}: Responding (Duration: {monolog_duration})"
+        if self.method == "feedback":
+            heading = f"{self.agent.agent_name}: Feedback (Elapsed: {monolog_duration})"
+
         self.log = self.agent.context.log.log(
             type="response",
-            heading=f"{self.agent.agent_name}: Responding (Duration: {monolog_duration})",
+            heading=heading,
             content=self.args.get("text", ""),
         )
 
     async def after_execution(self, response, **kwargs):
-        pass # do not add anything to the history or output
+        pass  # do not add anything to the history or output
