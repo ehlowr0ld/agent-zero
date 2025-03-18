@@ -40,11 +40,11 @@ class NotepadTool(Tool):
                 ), break_loop=False)
 
         note = Note(content=self.args["content"])
-        self.agent.context.notepad.add_note(note)
+        self.agent.notepad.add_note(note)
         message = self.agent.parse_prompt(
             "fw.notepad.add_note.md",
             uid=note.uid,
-            all_notes=json.dumps(self.agent.context.notepad.get_notes_for_rendering(), indent=4),
+            all_notes=json.dumps(self.agent.notepad.get_notes_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -67,11 +67,11 @@ class NotepadTool(Tool):
                     tool_args=json.dumps(self.args, indent=4),
                 ), break_loop=False)
 
-        self.agent.context.notepad.update_note(uid=self.args["uid"], new_content=self.args["content"])
+        self.agent.notepad.update_note(uid=self.args["uid"], new_content=self.args["content"])
         message = self.agent.parse_prompt(
             "fw.notepad.update_note.md",
             uid=self.args["uid"],
-            all_notes=json.dumps(self.agent.context.notepad.get_notes_for_rendering(), indent=4),
+            all_notes=json.dumps(self.agent.notepad.get_notes_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -84,32 +84,32 @@ class NotepadTool(Tool):
                     missing_arg="uid",
                     tool_args=json.dumps(self.args, indent=4),
                 ), break_loop=False)
-        if not self.agent.context.notepad.get_note(self.args["uid"]):
+        if not self.agent.notepad.get_note(self.args["uid"]):
             return Response(
                 message=self.agent.read_prompt(
                     "fw.notepad.note_not_found.md",
                     uid=self.args["uid"],
                 ), break_loop=False)
 
-        self.agent.context.notepad.delete_note(self.args["uid"])
+        self.agent.notepad.delete_note(self.args["uid"])
         message = self.agent.parse_prompt(
             "fw.notepad.delete_note.md",
             uid=self.args["uid"],
-            all_notes=json.dumps(self.agent.context.notepad.get_notes_for_rendering(), indent=4),
+            all_notes=json.dumps(self.agent.notepad.get_notes_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
     async def clear(self):
-        self.agent.context.notepad.clear()
+        self.agent.notepad.clear()
         message = self.agent.parse_prompt(
             "fw.notepad.clear.md",
-            all_notes=json.dumps(self.agent.context.notepad.get_notes_for_rendering(), indent=4),
+            all_notes=json.dumps(self.agent.notepad.get_notes_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
     async def display(self):
         message = self.agent.parse_prompt(
             "fw.notepad.display.md",
-            all_notes=json.dumps(self.agent.context.notepad.get_notes_for_rendering(), indent=4),
+            all_notes=json.dumps(self.agent.notepad.get_notes_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)

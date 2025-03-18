@@ -59,8 +59,6 @@ class AgentContext:
         self.reasoning = "auto"  # Changed default from "off" to "auto"
         self.planning = "auto"   # New property for planning with default "auto"
         self.deep_search = False
-        self.tasklist = TaskList.get_instance(self.id)
-        self.notepad = Notepad.get_instance(self.id)
         AgentContext._counter += 1
         self.no = AgentContext._counter
 
@@ -93,11 +91,16 @@ class AgentContext:
     def reset(self):
         self.kill_process()
         self.log.reset()
+
+        # Clear tasklist and notepad of the agent0
+        # this also saves the changes
+        if self.agent0:
+            TaskList.delete_by_prefix(self.agent0.tasklist.uid)
+            Notepad.delete_by_prefix(self.agent0.notepad.uid)
+
         self.agent0 = Agent(0, self.config, self)
         self.streaming_agent = None
         self.paused = False
-        self.tasklist.clear()
-        self.notepad.clear()
 
     def nudge(self):
         self.kill_process()
@@ -277,6 +280,13 @@ class Agent:
         # non-config vars
         self.number = number
         self.agent_name = f"Agent {self.number}"
+
+        if self.number == 0:
+            self.tasklist = TaskList.get_instance(self.context.id)
+            self.notepad = Notepad.get_instance(self.context.id)
+        else:
+            self.tasklist = TaskList.get_instance(f"{self.context.id}-{self.number}")
+            self.notepad = Notepad.get_instance(f"{self.context.id}-{self.number}")
 
         self.history = history.History(self)
         self.last_user_message: history.Message | None = None

@@ -1,5 +1,7 @@
 from agent import Agent, UserMessage
 from python.helpers.tool import Tool, Response
+from python.helpers.tasklist import TaskList
+from python.helpers.notepad import Notepad
 
 
 class Delegation(Tool):
@@ -21,5 +23,10 @@ class Delegation(Tool):
         await subordinate.hist_add_user_message(UserMessage(message=message, attachments=[]))
         # run subordinate monologue
         result = await subordinate.monologue()
+
+        # remove tasklist and notepad of subordinate agent
+        TaskList.delete_instance(subordinate.tasklist.uid)
+        Notepad.delete_instance(subordinate.notepad.uid)
+
         # result
         return Response(message=result, break_loop=False)

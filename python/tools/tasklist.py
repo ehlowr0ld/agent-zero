@@ -63,11 +63,11 @@ class TaskListTool(Tool):
             return Response(message=str(e), break_loop=False)
 
         task = Task(name=name, description=description)
-        self.agent.context.tasklist.add_task(task)
+        self.agent.tasklist.add_task(task)
         message = self.agent.parse_prompt(
             "fw.tasklist.add_task.md",
             uid=task.uid,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -79,23 +79,23 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        if self.agent.context.tasklist.get_task(uid=uid) is None:
+        if self.agent.tasklist.get_task(uid=uid) is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
 
         task = Task(name=name, description=description)
-        self.agent.context.tasklist.add_task_before(task, uid)
+        self.agent.tasklist.add_task_before(task, uid)
         message = self.agent.parse_prompt(
             "fw.tasklist.add_task_before.md",
             uid=task.uid,
             before_uid=uid,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -107,23 +107,23 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        if self.agent.context.tasklist.get_task(uid=uid) is None:
+        if self.agent.tasklist.get_task(uid=uid) is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
 
         task = Task(name=name, description=description)
-        self.agent.context.tasklist.add_task_after(task, uid)
+        self.agent.tasklist.add_task_after(task, uid)
         message = self.agent.parse_prompt(
             "fw.tasklist.add_task_after.md",
             uid=task.uid,
             after_uid=uid,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -133,22 +133,22 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        task = self.agent.context.tasklist.get_task(uid=uid)
+        task = self.agent.tasklist.get_task(uid=uid)
         if task is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
-        self.agent.context.tasklist.remove_task(uid)
+        self.agent.tasklist.remove_task(uid)
         message = self.agent.parse_prompt(
             "fw.tasklist.delete_task.md",
             uid=uid,
             task_name=task.name,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -158,13 +158,13 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        task = self.agent.context.tasklist.get_task(uid=uid)
+        task = self.agent.tasklist.get_task(uid=uid)
         if task is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
@@ -176,11 +176,11 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        self.agent.context.tasklist.update_task(uid=uid, name=name, description=description, status=TaskStatus(status))
+        self.agent.tasklist.update_task(uid=uid, name=name, description=description, status=TaskStatus(status))
         message = self.agent.parse_prompt(
             "fw.tasklist.update_task.md",
             uid=uid,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -191,31 +191,31 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        if self.agent.context.tasklist.get_task(uid=uid1) is None:
+        if self.agent.tasklist.get_task(uid=uid1) is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid1,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
-        if self.agent.context.tasklist.get_task(uid=uid2) is None:
+        if self.agent.tasklist.get_task(uid=uid2) is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid2,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
 
-        self.agent.context.tasklist.swap_tasks(uid1, uid2)
+        self.agent.tasklist.swap_tasks(uid1, uid2)
         message = self.agent.parse_prompt(
             "fw.tasklist.swap_tasks.md",
             uid1=uid1,
             uid2=uid2,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -225,22 +225,22 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        if self.agent.context.tasklist.get_task(uid=uid) is None:
+        if self.agent.tasklist.get_task(uid=uid) is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
 
-        self.agent.context.tasklist.set_task_status(uid, TaskStatus.PENDING)
+        self.agent.tasklist.set_task_status(uid, TaskStatus.PENDING)
         message = self.agent.parse_prompt(
             "fw.tasklist.set_task_status.md",
             uid=uid,
             status=TaskStatus.PENDING.value,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -250,22 +250,22 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        if self.agent.context.tasklist.get_task(uid=uid) is None:
+        if self.agent.tasklist.get_task(uid=uid) is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
 
-        self.agent.context.tasklist.set_task_status(uid, TaskStatus.IN_PROGRESS)
+        self.agent.tasklist.set_task_status(uid, TaskStatus.IN_PROGRESS)
         message = self.agent.parse_prompt(
             "fw.tasklist.set_task_status.md",
             uid=uid,
             status=TaskStatus.IN_PROGRESS.value,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -275,22 +275,22 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        if self.agent.context.tasklist.get_task(uid=uid) is None:
+        if self.agent.tasklist.get_task(uid=uid) is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
 
-        self.agent.context.tasklist.set_task_status(uid, TaskStatus.DONE)
+        self.agent.tasklist.set_task_status(uid, TaskStatus.DONE)
         message = self.agent.parse_prompt(
             "fw.tasklist.set_task_status.md",
             uid=uid,
             status=TaskStatus.DONE.value,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -300,22 +300,22 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        if self.agent.context.tasklist.get_task(uid=uid) is None:
+        if self.agent.tasklist.get_task(uid=uid) is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
 
-        self.agent.context.tasklist.set_task_status(uid, TaskStatus.FAILED)
+        self.agent.tasklist.set_task_status(uid, TaskStatus.FAILED)
         message = self.agent.parse_prompt(
             "fw.tasklist.set_task_status.md",
             uid=uid,
             status=TaskStatus.FAILED.value,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -325,22 +325,22 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        if self.agent.context.tasklist.get_task(uid=uid) is None:
+        if self.agent.tasklist.get_task(uid=uid) is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
 
-        self.agent.context.tasklist.set_task_status(uid, TaskStatus.SKIPPED)
+        self.agent.tasklist.set_task_status(uid, TaskStatus.SKIPPED)
         message = self.agent.parse_prompt(
             "fw.tasklist.set_task_status.md",
             uid=uid,
             status=TaskStatus.SKIPPED.value,
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -350,12 +350,12 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        if self.agent.context.tasklist.get_task(uid=uid) is None:
+        if self.agent.tasklist.get_task(uid=uid) is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
@@ -363,8 +363,8 @@ class TaskListTool(Tool):
         message = self.agent.parse_prompt(
             "fw.tasklist.get_task_logs.md",
             uid=uid,
-            all_logs=json.dumps(self.agent.context.tasklist.get_task_logs_for_rendering(uid), indent=4),
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_logs=json.dumps(self.agent.tasklist.get_task_logs_for_rendering(uid), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
@@ -375,13 +375,13 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        task = self.agent.context.tasklist.get_task(uid=uid)
+        task = self.agent.tasklist.get_task(uid=uid)
         if task is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
@@ -391,17 +391,17 @@ class TaskListTool(Tool):
             uid=uid,
             log_message=log_message,
             all_logs=json.dumps(task.get_logs_for_rendering(), indent=4),
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
     async def get_task_in_progress(self):
-        task = self.agent.context.tasklist.get_task_in_progress()
+        task = self.agent.tasklist.get_task_in_progress()
         if task is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.no_task_in_progress.md",
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
@@ -418,13 +418,13 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        task = self.agent.context.tasklist.get_task(uid=uid)
+        task = self.agent.tasklist.get_task(uid=uid)
         if task is None:
             return Response(
                 message=self.agent.read_prompt(
                     "fw.tasklist.task_not_found.md",
                     uid=uid,
-                    all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+                    all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
                 ),
                 break_loop=False,
             )
@@ -441,7 +441,7 @@ class TaskListTool(Tool):
         except TaskListErrorResponse as e:
             return Response(message=str(e), break_loop=False)
 
-        tasks_json = json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(status_filter), indent=4)
+        tasks_json = json.dumps(self.agent.tasklist.get_tasks_for_rendering(status_filter), indent=4)
         message = self.agent.parse_prompt(
             "fw.tasklist.get_tasks.md",
             status_filter=json.dumps([s.value for s in status_filter], indent=4),
@@ -450,15 +450,15 @@ class TaskListTool(Tool):
         return Response(message=message, break_loop=False)
 
     async def clear(self):
-        self.agent.context.tasklist.clear()
+        self.agent.tasklist.clear()
         message = self.agent.parse_prompt(
             "fw.tasklist.clear.md",
-            all_tasks=json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4),
+            all_tasks=json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4),
         )
         return Response(message=message, break_loop=False)
 
     async def display(self):
-        tasks_json = json.dumps(self.agent.context.tasklist.get_tasks_for_rendering(), indent=4)
+        tasks_json = json.dumps(self.agent.tasklist.get_tasks_for_rendering(), indent=4)
         message = self.agent.parse_prompt(
             "fw.tasklist.display.md",
             all_tasks=tasks_json,

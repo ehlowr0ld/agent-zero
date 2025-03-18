@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, PrivateAttr
 
-from python.helpers.files import write_file, read_file, exists, get_abs_path
+from python.helpers.files import write_file, read_file, exists, get_abs_path, list_files
 
 
 class TaskStatus(Enum):
@@ -50,7 +50,17 @@ class TaskList(BaseModel):
     __instances: ClassVar[dict[str, "TaskList"]] = PrivateAttr(default=dict())
 
     @classmethod
-    def get_instance(cls, uid: str | None = None) -> "TaskList":
+    def _preload_all_instances(cls) -> list["TaskList"]:
+        for file in list_files("memory/tasklists", "*.json"):
+            # extract uid from file by cutting absolute path prefix off and json suffix
+            uid = file.split("/")[-1].replace(".json", "")
+            cls.__instances[uid] = cls.model_validate_json(read_file(get_abs_path("memory/tasklists", file)))
+        return list(cls.__instances.values())
+
+    @classmethod
+    def get_instance(cls, uid: str | None = None, preload: bool = True) -> "TaskList":
+        if preload:
+            cls._preload_all_instances()
         if uid is None:
             uid = str(uuid.uuid4())
         if uid not in cls.__instances:
@@ -64,15 +74,36 @@ class TaskList(BaseModel):
 
     @classmethod
     def get_global_instance(cls) -> "TaskList":
+        cls._preload_all_instances()
         return cls.get_instance(cls.GLOBAL_TASKLIST_UID)
 
     @classmethod
-    def delete_instance(cls, uid: str):
+    def delete_instance(cls, uid: str, preload: bool = True):
+        if preload:
+            cls._preload_all_instances()
         path = get_abs_path("memory/tasklists", f"{uid}.json")
         if exists(path):
             os.remove(path)
         if uid in cls.__instances:
             del cls.__instances[uid]
+
+    @classmethod
+    def delete_by_prefix(cls, uid_prefix: str, preload: bool = True):
+        if preload:
+            cls._preload_all_instances()
+        uids = list(cls.__instances.keys())
+        for uid in uids:
+            if uid.startswith(uid_prefix):
+                cls.delete_instance(uid, False)
+
+    @classmethod
+    def clear_by_prefix(cls, uid_prefix: str, preload: bool = True):
+        if preload:
+            cls._preload_all_instances()
+        uids = list(cls.__instances.keys())
+        for uid in uids:
+            if uid.startswith(uid_prefix):
+                cls.__instances[uid].clear()
 
     def clear(self):
         self.tasks = []

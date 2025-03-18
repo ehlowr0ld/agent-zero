@@ -19,10 +19,10 @@ class RemoveChat(ApiHandler):
         chat_names.remove_chat(ctxid)
 
         # delete tasklist of this context
-        TaskList.delete_instance(ctxid)
+        TaskList.delete_by_prefix(ctxid)
 
         # delete notepad of this context
-        Notepad.delete_instance(ctxid)
+        Notepad.delete_by_prefix(ctxid)
 
         return {
             "message": "Context removed.",
