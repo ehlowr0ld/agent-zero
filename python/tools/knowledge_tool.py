@@ -5,8 +5,11 @@ from python.helpers.tool import Tool, Response
 from python.helpers.print_style import PrintStyle
 from python.helpers.errors import handle_error
 from python.helpers.searxng import search as searxng
+from python.helpers.document_query import DocumentQueryHelper
 
 SEARCH_ENGINE_RESULTS = 10
+
+
 class Knowledge(Tool):
     async def execute(self, question="", **kwargs):
         # Create tasks for all three search methods
@@ -22,6 +25,9 @@ class Knowledge(Tool):
 
         # perplexity_result, duckduckgo_result, memory_result = results
         searxng_result, memory_result = results
+
+        # enrich results with qa
+        searxng_result = await self.searxng_document_qa(searxng_result, question)
 
         # Handle exceptions and format results
         # perplexity_result = self.format_result(perplexity_result, "Perplexity")
@@ -63,6 +69,30 @@ class Knowledge(Tool):
     async def searxng_search(self, question):
         return await searxng(question)
 
+    async def searxng_document_qa(self, result, query):
+        if isinstance(result, Exception) or not query or not result or not result["results"]:
+            return result
+
+        result["results"] = result["results"][:SEARCH_ENGINE_RESULTS]
+
+        tasks = []
+        helper = DocumentQueryHelper(self.agent)
+
+        for index, item in enumerate(result["results"]):
+            tasks.append(helper.document_qa(item["url"], [query]))
+
+        task_results = list(await asyncio.gather(*tasks, return_exceptions=True))
+
+        for index, item in enumerate(result["results"]):
+            if isinstance(task_results[index], BaseException):
+                continue
+            found, qa = task_results[index]  # type: ignore
+            if not found:
+                continue
+            result["results"][index]["qa"] = qa
+
+        return result
+
     async def mem_search(self, question: str):
         db = await memory.Memory.get(self.agent)
         docs = await db.search_similarity_threshold(
@@ -84,6 +114,9 @@ class Knowledge(Tool):
 
         outputs = []
         for item in result["results"]:
-            outputs.append(f"{item['title']}\n{item['url']}\n{item['content']}")
+            if "qa" in item:
+                outputs.append(f"## {item['title']}\n\nURL: {item['url']}\nSearch Engine Summary: {item['content']}\n\nQ&A Result:\n{item['qa']}")
+            else:
+                outputs.append(f"## {item['title']}\n\nURL: {item['url']}\nSearch Engine Summary: {item['content']}")
 
-        return "\n\n".join(outputs[:SEARCH_ENGINE_RESULTS]).strip()
+        return "\n\n8< --------- next result --------- >8\n\n".join(outputs[:SEARCH_ENGINE_RESULTS]).strip()
