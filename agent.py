@@ -338,11 +338,12 @@ class Agent:
 
                         start = time.time()
                         ttft = ''
+                        complete_response = False
                         last_object = None
-                        rounds = 2
 
                         async def stream_callback(chunk: str, full: str):
-                            nonlocal ttft, heading, last_object, rounds
+                            nonlocal ttft, heading, complete_response, last_object
+                            required_properties = ['observations', 'thoughts', 'reflection', 'tool_name', 'tool_args']
                             # output the agent response stream
                             if chunk:
                                 printer.stream(chunk)
@@ -352,20 +353,29 @@ class Agent:
                                 self.set_data('response_ttft', ttft)
                                 self.set_data('response_duration', duration)
 
-                                current_object = self.log_from_stream(full, log, heading, duration, ttft)
-                                complete_response = True
-                                for key in ['topic', 'observations', 'thoughts', 'reflection', 'tool_name', 'tool_args']:
-                                    if key not in current_object or current_object[key] is None:
-                                        complete_response = False
-                                if complete_response and last_object and current_object == last_object and rounds < 1:
+                                complete_response, current_object = self.log_from_stream(full, log, heading, required_properties)
+
+                                PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
+                                    f"DEBUG: Current object: {current_object}"
+                                )
+                                PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
+                                    f"DEBUG: Complete response: {complete_response}"
+                                )
+
+                                if complete_response:
+                                    for key in required_properties:
+                                        if key not in current_object or current_object[key] is None:
+                                            complete_response = False
+
+                                if complete_response and last_object == current_object:
                                     self.set_data('agent_responded', True)
-                                rounds -= 1
+
                                 last_object = current_object
 
                         # store as last context window content
                         self.set_data(Agent.DATA_NAME_CTX_WINDOW, prompt.format())
 
-                        self.log_from_stream('', log, heading, '00:00:00', '00:00:00')
+                        self.log_from_stream('', log, heading, [], '00:00:00', '00:00:00')
                         self.set_data('response_ttft', '00:00:00')
                         self.set_data('response_duration', '00:00:00')
                         agent_response = await self.call_chat_model(
@@ -445,10 +455,6 @@ class Agent:
 
         # convert history to LLM format
         history_langchain: list[BaseMessage] = history.output_langchain(history_combined)
-
-        PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
-            f"History Langchain: {history_langchain}"
-        )
 
         # build chain from system prompt, message history and model
         prompt = ChatPromptTemplate.from_messages(
@@ -791,17 +797,20 @@ class Agent:
                 type="error", content=f"{self.agent_name}: Message misformat"
             )
 
-    def log_from_stream(self, stream: str, logItem: Log.LogItem, heading: str, duration: str, ttft: str) -> dict[str, Any]:
+    def log_from_stream(self, stream: str, logItem: Log.LogItem, heading: str, required_properties: list[str] = [], duration: str = "", ttft: str = "") -> tuple[bool, dict[str, Any]]:
+        if not duration:
+            duration = self.get_data('response_duration')
+        if not ttft:
+            ttft = self.get_data('response_ttft')
+
         # We do not want to crash the loop because of a log error
         try:
             if len(stream) < 25:
-                return {}  # no reason to try
-            response = DirtyJson.parse_string(stream)
-            if isinstance(response, dict):
-                response["duration"] = duration
-                response["time_to_first_token"] = ttft
-            else:
-                response = {"duration": duration, "time_to_first_token": ttft}
+                return False, {}  # no reason to try
+            response = {"duration": duration, "time_to_first_token": ttft}
+            full_item, response_parsed = DirtyJson.parse_string_checked(stream, required_properties)
+            if isinstance(response_parsed, dict):
+                response.update(response_parsed)
 
             if "topic" in response:
                 self.set_data('thinking_topic', response["topic"])
@@ -809,9 +818,9 @@ class Agent:
             # log if result is a dictionary already
             logItem.update(heading=f"{heading}: {self.get_data('thinking_topic') or '...'}", content=stream, kvps=response)
 
-            return response
+            return full_item, response
         except Exception:
-            return {}
+            return False, {}
 
     def get_tool(self, name: str, method: str | None, args: dict, message: str, **kwargs):
         from python.tools.unknown import Unknown
