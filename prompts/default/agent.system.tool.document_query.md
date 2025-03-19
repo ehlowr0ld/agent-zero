@@ -6,6 +6,8 @@ It can be used to:
  *  Answer queries about a webpage, remote or local document
 By default, when the "queries" argument is empty, this tool returns the text content of the document retrieved using OCR.
 Additionally, you can pass a list of "queries" - in this case, the tool returns the answers to all the passed queries about the document.
+!!! This is a universal document reader qnd query tool
+!!! Supported document dormats: HTML, PDF, Office Documents (word,excel, powerpoint), Textfiles and many more.
 
 #### Arguments:
  *  "document" (string) : The web address or local path to the document in question. Webdocuments need "http://" or "https://" protocol prefix. For local files the "file:" protocol prefix is optional. Local files MUST be passed with full filesystem path.
