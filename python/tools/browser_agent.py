@@ -13,7 +13,7 @@ from pydantic import BaseModel
 import uuid
 import dirtyjson
 from python.helpers.dirty_json import DirtyJson
-
+from langchain_core.messages import SystemMessage
 
 class State:
     @staticmethod
@@ -85,10 +85,10 @@ class State:
         await self._initialize()
 
         class CustomSystemPrompt(browser_use.SystemPrompt):
-            def important_rules(self) -> str:
-                existing_rules = super().important_rules()
+            def get_system_message(self) -> SystemMessage:
+                existing_rules = super().get_system_message().text()
                 new_rules = agent.read_prompt("prompts/browser_agent.system.md")
-                return f"{existing_rules}\n{new_rules}".strip()
+                return SystemMessage(content=f"{existing_rules}\n{new_rules}".strip())
 
         # Model of task result
         class DoneResult(BaseModel):
@@ -185,7 +185,7 @@ class BrowserAgent(Tool):
         result = await task.result()
         answer = result.final_result()
         try:
-            answer_data = dirtyjson.loads(answer)
+            answer_data = DirtyJson.parse_string(answer)
             answer_text = strings.dict_to_text(answer_data)  # type: ignore
         except Exception as e:
             try:
