@@ -796,10 +796,7 @@ class Agent:
         try:
             if len(stream) < 25:
                 return {}  # no reason to try
-            try:
-                response = dirtyjson.loads(stream)
-            except Exception:
-                response = DirtyJson.parse_string(stream)
+            response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
                 response["duration"] = duration
                 response["time_to_first_token"] = ttft

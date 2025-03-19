@@ -45,10 +45,7 @@ class MemorizeSolutions(Extension):
             background=True,
         )
 
-        try:
-            solutions = dirtyjson.loads(solutions_json)
-        except Exception as e:
-            solutions = DirtyJson.parse_string(solutions_json)
+        solutions = DirtyJson.parse_string(solutions_json)
 
         if not isinstance(solutions, list) or len(solutions) == 0:
             log_item.update(heading="No successful solutions to memorize.")

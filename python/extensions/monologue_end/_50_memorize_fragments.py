@@ -46,10 +46,7 @@ class MemorizeMemories(Extension):
             background=True,
         )
 
-        try:
-            memories = dirtyjson.loads(memories_json)
-        except Exception as e:
-            memories = DirtyJson.parse_string(memories_json)
+        memories = DirtyJson.parse_string(memories_json)
 
         if not isinstance(memories, list) or len(memories) == 0:
             log_item.update(heading="No useful information to memorize.")

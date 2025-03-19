@@ -9,11 +9,7 @@ from fnmatch import fnmatch
 def json_parse_dirty(json:str) -> dict[str,Any] | None:
     ext_json = extract_json_object_string(json)
     if ext_json:
-        data = None
-        try:
-            data = dirtyjson.loads(ext_json)
-        except Exception as e:
-            data = DirtyJson.parse_string(ext_json)
+        data = DirtyJson.parse_string(ext_json)
         if isinstance(data,dict): return data
     return None
 
