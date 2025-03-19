@@ -51,8 +51,8 @@ class DocumentQueryStore:
     """
 
     # Default chunking parameters
-    DEFAULT_CHUNK_SIZE = 500
-    DEFAULT_CHUNK_OVERLAP = 50
+    DEFAULT_CHUNK_SIZE = 1000
+    DEFAULT_CHUNK_OVERLAP = 100
 
     # Cache for initialized stores
     _stores: dict[str, "DocumentQueryStore"] = {}
@@ -560,7 +560,7 @@ class DocumentQueryHelper:
                 document_uri=document_uri,
                 query=optimized_query.text(),
                 limit=10000,
-                threshold=0.7
+                threshold=0.66
             )
             content += "\n\n----\n\n".join([chunk.page_content for chunk in chunks]) + "\n\n----\n\n"
 
