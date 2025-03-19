@@ -339,9 +339,10 @@ class Agent:
                         start = time.time()
                         ttft = ''
                         last_object = None
+                        rounds = 2
 
                         async def stream_callback(chunk: str, full: str):
-                            nonlocal ttft, heading, last_object
+                            nonlocal ttft, heading, last_object, rounds
                             # output the agent response stream
                             if chunk:
                                 printer.stream(chunk)
@@ -354,11 +355,11 @@ class Agent:
                                 current_object = self.log_from_stream(full, log, heading, duration, ttft)
                                 complete_response = True
                                 for key in ['topic', 'observations', 'thoughts', 'reflection', 'tool_name', 'tool_args']:
-                                    if key not in current_object:
+                                    if key not in current_object or current_object[key] is None:
                                         complete_response = False
-                                if complete_response and last_object and current_object == last_object:
+                                if complete_response and last_object and current_object == last_object and rounds < 1:
                                     self.set_data('agent_responded', True)
-
+                                rounds -= 1
                                 last_object = current_object
 
                         # store as last context window content
