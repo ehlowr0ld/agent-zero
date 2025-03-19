@@ -485,9 +485,6 @@ def output_langchain(messages: list[OutputMessage]) -> list[BaseMessage]:
                 human_message_obj = HumanMessage(content=human_message_parts)  # type: ignore
                 result.append(human_message_obj)
 
-    PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
-        f"Result: {result}"
-    )
     return result
 
 
