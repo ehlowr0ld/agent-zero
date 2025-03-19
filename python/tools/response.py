@@ -6,7 +6,7 @@ import json
 class ResponseTool(Tool):
 
     async def execute(self, **kwargs):
-        valid_methods = ["feedback", "final"]
+        valid_methods = ["notification", "response"]
         if self.method not in valid_methods:
             return Response(
                 message=self.agent.read_prompt(
@@ -20,17 +20,17 @@ class ResponseTool(Tool):
 
         return await getattr(self, self.method)()
 
-    async def feedback(self):
+    async def notification(self):
         return Response(message=self.args["text"], break_loop=False)
 
-    async def final(self):
+    async def response(self):
         return Response(message=self.args["text"], break_loop=True)
 
     async def before_execution(self, **kwargs):
         monolog_duration = time.strftime("%H:%M:%S", time.gmtime(time.time() - int(self.agent.get_data('monolog_start'))))
-        heading = f"{self.agent.agent_name}: Responding (Duration: {monolog_duration})"
-        if self.method == "feedback":
-            heading = f"{self.agent.agent_name}: Feedback (Elapsed: {monolog_duration})"
+        heading = f"{self.agent.agent_name}: Response (Duration: {monolog_duration})"
+        if self.method == "notification":
+            heading = f"{self.agent.agent_name}: Notification (Elapsed: {monolog_duration})"
 
         self.log = self.agent.context.log.log(
             type="response",
