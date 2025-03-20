@@ -2,6 +2,9 @@ from python.helpers.print_style import PrintStyle
 
 
 class DirtyJson:
+
+    DEBUG = False
+
     def __init__(self):
         self._reset()
 
@@ -48,9 +51,10 @@ class DirtyJson:
             self._parse()
             self._check_completeness()
         except Exception as e:
-            PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
-                f"DIRTY_JSON: Error in feed: {str(e)}"
-            )
+            if DirtyJson.DEBUG:
+                PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
+                    f"DIRTY_JSON: Error in feed: {str(e)}"
+                )
             # Don't update is_complete on error
         return self.result, self.is_complete
 
@@ -348,17 +352,19 @@ class DirtyJson:
         for prop in self.required_properties:
             # Property is missing
             if prop not in top_obj:
-                PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
-                    f"DIRTY_JSON: Required property {prop} is missing"
-                )
+                if DirtyJson.DEBUG:
+                    PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
+                        f"DIRTY_JSON: Required property {prop} is missing"
+                    )
                 return False
 
             # Property is present but needs to be checked for completeness
             value = top_obj[prop]
             if self._is_property_incomplete(prop, value):
-                PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
-                    f"DIRTY_JSON: Required property {prop} is incomplete"
-                )
+                if DirtyJson.DEBUG:
+                    PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
+                        f"DIRTY_JSON: Required property {prop} is incomplete"
+                    )
                 return False
 
         return True
@@ -387,18 +393,20 @@ class DirtyJson:
 
             # Specifically for tool_args, add detailed diagnostics
             if prop_name == "tool_args":
-                PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
-                    f"DIRTY_JSON: Checking 'tool_args' at position {prop_pos}"
-                )
-                PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
-                    f"DIRTY_JSON: Value type: {type(value)}"
-                )
+                if DirtyJson.DEBUG:
+                    PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
+                        f"DIRTY_JSON: Checking 'tool_args' at position {prop_pos}"
+                    )
+                    PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
+                        f"DIRTY_JSON: Value type: {type(value)}"
+                    )
                 # Show context around the property
                 context_start = max(0, prop_pos - 10)
                 context_end = min(len(self.json_string), prop_pos + 50)
-                PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
-                    f"DIRTY_JSON: Context: {self.json_string[context_start:context_end]}"
-                )
+                if DirtyJson.DEBUG:
+                    PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
+                        f"DIRTY_JSON: Context: {self.json_string[context_start:context_end]}"
+                    )
 
             # Find the value part after the property
             colon_pos = self.json_string.find(':', prop_pos)
@@ -422,9 +430,10 @@ class DirtyJson:
                 # If we have an opening brace but no closing one, it's incomplete
                 if not self._find_matching_close(value_start, '{', '}'):
                     if prop_name == "tool_args":
-                        PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
-                            "Empty tool_args object is incomplete!"
-                        )
+                        if DirtyJson.DEBUG:
+                            PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
+                                "Empty tool_args object is incomplete!"
+                            )
                     return True
 
             if char == '[' and isinstance(value, list) and not value:
@@ -443,9 +452,10 @@ class DirtyJson:
                 # Also check for matching braces to detect truncation
                 is_complete = self._find_matching_close(value_start, '{', '}')
                 if not is_complete and prop_name == "tool_args":
-                    PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
-                        "Tool args object has no matching close!"
-                    )
+                    if DirtyJson.DEBUG:
+                        PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
+                            "Tool args object has no matching close!"
+                        )
                 return not is_complete
             elif char == '[':  # Array
                 is_complete = self._find_matching_close(value_start, '[', ']')
@@ -457,9 +467,10 @@ class DirtyJson:
             # For primitives, ensure we have a complete value (comma or closing brace after)
             return self._is_primitive_incomplete(value_start)
         except Exception as e:
-            PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
-                f"DIRTY_JSON: Error checking property {prop_name}: {str(e)}"
-            )
+            if DirtyJson.DEBUG:
+                PrintStyle(font_color="red", background_color="black", bold=True, padding=True).print(
+                    f"DIRTY_JSON: Error checking property {prop_name}: {str(e)}"
+                )
             # If there's an error, assume incomplete
             return True
 

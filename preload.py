@@ -13,6 +13,7 @@ async def preload():
         set = settings.get_default_settings()
 
         async def preload_document_query():
+            # make sure db is initialized
             await DocumentQueryStore.get(AgentContext.first().agent0)
 
         # async tasks to preload

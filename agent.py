@@ -357,13 +357,6 @@ class Agent:
 
                                 complete_response, current_object = self.log_from_stream(full, log, heading, required_properties)
 
-                                PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
-                                    f"DEBUG: Current object: {current_object}"
-                                )
-                                PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
-                                    f"DEBUG: Complete response: {complete_response}"
-                                )
-
                                 if complete_response:
                                     for key in required_properties:
                                         if key not in current_object or current_object[key] is None:

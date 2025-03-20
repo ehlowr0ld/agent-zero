@@ -455,10 +455,6 @@ def output_langchain(messages: list[OutputMessage]) -> list[BaseMessage]:
                 message += serialize_content(content)
 
                 setts = settings.get_settings()
-                # DEBUG
-                PrintStyle(font_color="grey", background_color="black", bold=True, padding=True).print(
-                    f"DEBUG: chat_model_vision: {setts['chat_model_vision']}"
-                )
                 if setts["chat_model_vision"]:
                     if isinstance(content, dict) and "attachments" in content:
                         attachments: list[str] = cast(list[str], content["attachments"])

@@ -34,7 +34,7 @@ class ReasoningTool(Tool):
                 self.agent.set_data("chat_model_reasoning_tokens", min(32000, default))
 
             PrintStyle(font_color="green", bold=True, padding=True).print(
-                f"DEBUG: chat_model_ctx_output: {chat_model_ctx_output}, chat_model_ctx_length: {chat_model_ctx_length}, reasoning_effort: {reasoning_effort}, reasoning_tokens: {self.agent.get_data('chat_model_reasoning_tokens')}"
+                f"DEBUG: reasoning_tool :: chat_model_ctx_output: {chat_model_ctx_output}, chat_model_ctx_length: {chat_model_ctx_length}, reasoning_effort: {reasoning_effort}, reasoning_tokens: {self.agent.get_data('chat_model_reasoning_tokens')}"
             )
 
         response = self.agent.read_prompt("fw.reasoning_tool.md", query=kwargs.get("query"))
