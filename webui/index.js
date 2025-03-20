@@ -80,51 +80,50 @@ document.addEventListener('DOMContentLoaded', setupSidebarToggle);
 
 // Setup an observer for collapsible messages
 function setupCollapsibleMessagesObserver() {
-    // Create a mutation observer to monitor for new collapsible messages
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(function(node) {
-                    // Check if the node is an element and has the collapsible class
-                    if (node.nodeType === 1) {
-                        // Handle direct collapsible elements
-                        if (node.classList && node.classList.contains('message-collapsible')) {
-                            const heading = node.querySelector('.message-heading');
-                            if (heading && !heading.hasAttribute('listener-added')) {
-                                heading.addEventListener('click', function() {
-                                    node.classList.toggle('collapsed');
-                                });
-                                heading.setAttribute('listener-added', 'true');
-                            }
-                        }
+    // This way, click events on message headings will work regardless of when they're added
+    const chatHistory = document.getElementById('chat-history');
 
-                        // Also check for collapsible elements that might be children of the added node
-                        if (node.querySelectorAll) {
-                            const collapsibleElements = node.querySelectorAll('.message-collapsible');
-                            collapsibleElements.forEach(function(collapsible) {
-                                const heading = collapsible.querySelector('.message-heading');
-                                if (heading && !heading.hasAttribute('listener-added')) {
-                                    heading.addEventListener('click', function() {
-                                        collapsible.classList.toggle('collapsed');
-                                    });
-                                    heading.setAttribute('listener-added', 'true');
-                                }
-                            });
-                        }
-                    }
-                });
+    if (!chatHistory) {
+        console.error('Chat history element not found');
+        return;
+    }
+
+    // We'll use a flag on the chat history to avoid adding multiple handlers
+    if (chatHistory.hasAttribute('collapsible-handler-added')) {
+        return; // Handler already set up
+    }
+
+    // Add a single event listener to the chat history that handles all heading clicks
+    chatHistory.addEventListener('click', function(event) {
+        // Check if the click was on a message heading or its child elements
+        const heading = event.target.closest('.message-heading');
+        if (!heading) return;
+
+        // Find the container element
+        const container = heading.closest('.message-collapsible');
+        if (container) {
+            // Toggle the collapsed state
+            event.preventDefault();
+            console.log('Toggling collapsed state for', container.id);
+
+            // Toggle the class
+            if (container.classList.contains('collapsed')) {
+                container.classList.remove('collapsed');
+            } else {
+                container.classList.add('collapsed');
             }
-        });
+        }
     });
 
-    // Start observing the chat history for changes
-    const chatHistory = document.getElementById('chat-history');
-    if (chatHistory) {
-        observer.observe(chatHistory, {
-            childList: true,
-            subtree: true
-        });
-    }
+    // Mark the chat history as having the handler
+    chatHistory.setAttribute('collapsible-handler-added', 'true');
+
+    // Process any existing headings to mark them
+    const headings = chatHistory.querySelectorAll('.message-collapsible .message-heading:not([listener-added])');
+    headings.forEach(function(heading) {
+        // Just mark these as processed
+        heading.setAttribute('listener-added', 'true');
+    });
 }
 
 // Initialize the collapsible messages observer when DOM is loaded
@@ -288,11 +287,70 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
         }
 
         // For streaming updates to collapsible messages, we need to
-        // make sure we preserve the event handlers and collapsed state
+        // make sure we preserve the collapsed state
         wasCollapsed = messageContainer.classList.contains('collapsed');
 
-        // For other types, update the message
-        messageContainer.innerHTML = '';
+        // For collapsible messages, we need to special-handle the updates
+        // to preserve the event handlers during streaming
+        if (['agent', 'tool', 'code_exe', 'browser'].includes(type)) {
+            // Get the existing heading element before we clear the container
+            const existingHeading = messageContainer.querySelector('.message-heading');
+
+            // Create a temporary container to get the new content
+            const tempContainer = document.createElement('div');
+            const handler = msgs.getHandler(type);
+            handler(tempContainer, id, type, heading, content, temp, kvps);
+
+            // Extract the new message content, excluding the heading
+            const newContent = tempContainer.querySelector('.message-content');
+
+            // Get the new heading text from the temp container
+            const newHeadingElement = tempContainer.querySelector('.message-heading');
+
+            // Find the existing content container
+            const existingContent = messageContainer.querySelector('.message-content');
+
+            // If we have both elements, update the content and heading text
+            if (existingHeading && existingContent && newContent) {
+                // Update the heading text while preserving the element and its event handlers
+                if (newHeadingElement && existingHeading.textContent !== newHeadingElement.textContent) {
+                    existingHeading.textContent = newHeadingElement.textContent;
+                }
+
+                // Update the content
+                existingContent.innerHTML = newContent.innerHTML;
+
+                // Update any KVPs if present
+                const existingKvps = messageContainer.querySelector('.msg-kvps');
+                const newKvps = tempContainer.querySelector('.msg-kvps');
+
+                if (existingKvps && newKvps) {
+                    existingKvps.innerHTML = newKvps.innerHTML;
+                } else if (newKvps && !existingKvps) {
+                    // If there's a new kvps table but no existing one, add it
+                    messageContainer.querySelector('.message').appendChild(newKvps.cloneNode(true));
+                }
+
+                // No need to proceed further - we've updated the content
+                // without touching the heading element (only updated its text)
+
+                // Restore collapsed state
+                if (wasCollapsed) {
+                    messageContainer.classList.add('collapsed');
+                } else {
+                    messageContainer.classList.remove('collapsed');
+                }
+
+                return;
+            } else {
+                // If we couldn't find the existing content or heading,
+                // fall back to replacing the entire innerHTML
+                messageContainer.innerHTML = '';
+            }
+        } else {
+            // For non-collapsible messages, just clear the container
+            messageContainer.innerHTML = '';
+        }
     } else {
         // Create a new container if not found
         const sender = type === 'user' ? 'user' : 'ai';
@@ -312,6 +370,7 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
         }
     }
 
+    // Apply the handler to update the message content
     const handler = msgs.getHandler(type);
     handler(messageContainer, id, type, heading, content, temp, kvps);
 
@@ -320,26 +379,23 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
         chatHistory.appendChild(messageContainer);
     }
 
-    // Add click handler for collapsible messages
+    // For collapsible messages, ensure the heading has a direct click handler
     if (['agent', 'tool', 'code_exe', 'browser'].includes(type)) {
         const messageHeading = messageContainer.querySelector('.message-heading');
-        if (messageHeading && !messageHeading.hasAttribute('listener-added')) {
-            messageHeading.addEventListener('click', (e) => {
-                e.preventDefault();
-                messageContainer.classList.toggle('collapsed');
-            });
+        if (messageHeading) {
+            // Just mark the heading as having a listener
+            // We'll use event delegation for the actual click handling
             messageHeading.setAttribute('listener-added', 'true');
         }
 
-        // Restore collapsed state if needed
-        if (wasCollapsed && !messageContainer.classList.contains('collapsed')) {
+        // Restore collapsed state
+        if (wasCollapsed) {
             messageContainer.classList.add('collapsed');
-        } else if (!wasCollapsed && messageContainer.classList.contains('collapsed')) {
+        } else {
             messageContainer.classList.remove('collapsed');
         }
     }
 }
-
 
 window.loadKnowledge = async function () {
     const input = document.createElement('input');
@@ -477,16 +533,8 @@ async function poll() {
 }
 
 function afterMessagesUpdate(logs) {
-    // Ensure all collapsible messages have click handlers
-    document.querySelectorAll('.message-collapsible .message-heading').forEach((heading) => {
-        if (!heading.hasAttribute('listener-added')) {
-            heading.addEventListener('click', (e) => {
-                e.preventDefault();
-                heading.closest('.message-collapsible').classList.toggle('collapsed');
-            });
-            heading.setAttribute('listener-added', 'true');
-        }
-    });
+    // Ensure event delegation for collapsible messages is set up
+    setupCollapsibleMessagesObserver();
 
     if (localStorage.getItem('speech') == 'true') {
         speakMessages(logs)
@@ -1401,30 +1449,6 @@ async function updatePlanningState(contextId) {
 document.addEventListener('DOMContentLoaded', function() {
     setupSidebarToggle();
 
-    // Create a mutation observer to monitor for new message elements
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1 && node.classList.contains('message-collapsible')) {
-                        const heading = node.querySelector('.message-heading');
-                        if (heading && !heading.hasAttribute('listener-added')) {
-                            heading.addEventListener('click', function() {
-                                node.classList.toggle('collapsed');
-                            });
-                            heading.setAttribute('listener-added', 'true');
-                        }
-                    }
-                });
-            }
-        });
-    });
-
-    // Start observing the chat history for changes
-    observer.observe(document.getElementById('chat-history'), {
-        childList: true,
-        subtree: true
-    });
-
-    // ... existing event handlers setup
+    // Set up the collapsible messages handler
+    setupCollapsibleMessagesObserver();
 });
