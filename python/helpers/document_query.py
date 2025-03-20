@@ -62,12 +62,6 @@ class DocumentQueryStore:
         store_key = f"{memory_subdir}/document_query"
 
         if store_key not in DocumentQueryStore._stores:
-            agent.context.log.log(
-                type="util",
-                heading=f"Initializing DocumentQueryStore in '/{memory_subdir}/document_query'",
-                temp=True,
-            )
-
             # Initialize embeddings model from agent config
             embeddings_model = agent.get_embedding_model()
 
@@ -132,7 +126,7 @@ class DocumentQueryStore:
                 PrintStyle.error(f"Error loading vector store: {str(e)}")
                 self._initialize_new_vectorstore()
         else:
-            PrintStyle.standard("Creating new vector store")
+            PrintStyle.standard("Creating new vector store in '{db_dir}'")
             self._initialize_new_vectorstore()
 
     def _initialize_new_vectorstore(self):

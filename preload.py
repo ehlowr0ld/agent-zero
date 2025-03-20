@@ -1,6 +1,8 @@
 import asyncio
+from agent import AgentContext
 from python.helpers import runtime, whisper, settings
 from python.helpers.print_style import PrintStyle
+from python.helpers.document_query import DocumentQueryStore
 
 PrintStyle().print("Running preload...")
 runtime.initialize()
@@ -10,8 +12,11 @@ async def preload():
     try:
         set = settings.get_default_settings()
 
+        async def preload_document_query():
+            await DocumentQueryStore.get(AgentContext.first().agent0)
+
         # async tasks to preload
-        tasks = [whisper.preload(set["stt_model_size"])]
+        tasks = [whisper.preload(set["stt_model_size"]), preload_document_query()]
 
         return asyncio.gather(*tasks, return_exceptions=True)
     except Exception as e:
