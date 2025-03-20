@@ -115,8 +115,19 @@ class Knowledge(Tool):
         outputs = []
         for item in result["results"]:
             if "qa" in item:
-                outputs.append(f"## {item['title']}\n\nURL: {item['url']}\nSearch Engine Summary: {item['content']}\n\nQ&A Result:\n{item['qa']}")
+                outputs.append(
+                    f"## Next Result\n"
+                    f"Title: {item['title'].strip()}\n"
+                    f"URL: {item['url'].strip()}\n"
+                    f"Search Engine Summary: {item['content'].strip()}\n"
+                    f"Q&A Result: {item['qa'].strip()}"
+                )
             else:
-                outputs.append(f"## {item['title']}\n\nURL: {item['url']}\nSearch Engine Summary: {item['content']}")
+                outputs.append(
+                    f"## Next Result\n"
+                    f"Title: {item['title'].strip()}\n"
+                    f"URL: {item['url'].strip()}\n"
+                    f"Search Engine Summary: {item['content'].strip()}"
+                )
 
-        return "\n\n8< --------- next result --------- >8\n\n".join(outputs[:SEARCH_ENGINE_RESULTS]).strip()
+        return "\n\n".join(outputs[:SEARCH_ENGINE_RESULTS]).strip()
