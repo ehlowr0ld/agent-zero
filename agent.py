@@ -10,6 +10,8 @@ from typing import Any, Awaitable, Coroutine, Optional, Dict, TypedDict
 import uuid
 import models
 
+import openai
+
 from langchain_core.prompt_values import ChatPromptValue
 from python.helpers import extract_tools, rate_limiter, files, errors, history, tokens
 from python.helpers.print_style import PrintStyle
@@ -638,6 +640,8 @@ class Agent:
         callback: Callable[[str], Awaitable[None]] | None = None,
         background: bool = False,
     ):
+        max_reconnect_attempts = 3
+
         prompt = ChatPromptTemplate.from_messages(
             [SystemMessage(content=system), HumanMessage(content=message)]
         )
@@ -652,23 +656,41 @@ class Agent:
             self.config.utility_model, prompt.format(), background
         )
 
-        async for chunk in (prompt | model).astream({}):
-            await self.handle_intervention()  # wait for intervention and handle it, if paused
+        exception = True
+        reconect_attempts = 0
+        while exception and reconect_attempts <= max_reconnect_attempts:
+            try:
+                async for chunk in (prompt | model).astream({}):
+                    exception = False
 
-            content = models.parse_chunk(chunk)
-            limiter.add(output=tokens.approximate_tokens(content))
-            response += content
+                    if reconect_attempts > 0:
+                        PrintStyle(background_color="black", font_color="grey", padding=True).print("Reconnecting to utility model")
 
-            if callback:
-                await callback(content)
+                    await self.handle_intervention()  # wait for intervention and handle it, if paused
 
-        return response
+                    content = models.parse_chunk(chunk)
+                    limiter.add(output=tokens.approximate_tokens(content))
+                    response += content
+
+                    if callback:
+                        await callback(content)
+
+                return response
+            except openai.APIConnectionError as e:
+                exception = True
+                reconect_attempts += 1
+                if reconect_attempts >= max_reconnect_attempts:
+                    raise e
+                else:
+                    await asyncio.sleep(1)
 
     async def call_chat_model(
         self,
         prompt: ChatPromptTemplate,
         callback: Callable[[str, str], Awaitable[None]] | None = None,
     ):
+        max_reconnect_attempts = 3
+
         response = ""
 
         # model class - the inner functions handle the reasoning tokens and effort
@@ -677,29 +699,45 @@ class Agent:
         # rate limiter
         limiter = await self.rate_limiter(self.config.chat_model, prompt.format())
 
-        async for chunk in (prompt | model).astream({}):
-            await self.handle_intervention()  # wait for intervention and handle it, if paused
+        exception = True
+        reconect_attempts = 0
+        while exception and reconect_attempts <= max_reconnect_attempts:
+            try:
+                async for chunk in (prompt | model).astream({}):
+                    exception = False
 
-            content = models.parse_chunk(chunk)
-            limiter.add(output=tokens.approximate_tokens(content))
-            response += content
+                    if reconect_attempts > 0:
+                        PrintStyle(background_color="black", font_color="grey", padding=True).print("Reconnecting to chat model")
 
-            # here we might have set the agent_responded flag to True
-            if callback:
-                await callback(content, response)
+                    await self.handle_intervention()  # wait for intervention and handle it, if paused
 
-            # if the agent has responded, we can break the streaming loop to forbid multiple json stanzas or plaintext comments
-            if self.get_data('agent_responded'):
-                PrintStyle(background_color="black", font_color="grey", padding=True).print("Agent full response received, breaking streaming loop")
-                break
+                    content = models.parse_chunk(chunk)
+                    limiter.add(output=tokens.approximate_tokens(content))
+                    response += content
 
-        # reset reasoning config until next call to reasoning_tool
-        # these were set by reasoning_tool.execute()
-        # we can not call this in message_loop_end extension because we could get called multiple times in one msg loop
-        self.set_data("chat_model_reasoning_tokens", 0)
-        self.set_data("chat_model_reasoning_effort", "none")
+                    # here we might have set the agent_responded flag to True
+                    if callback:
+                        await callback(content, response)
 
-        return response
+                    # if the agent has responded, we can break the streaming loop to forbid multiple json stanzas or plaintext comments
+                    if self.get_data('agent_responded'):
+                        PrintStyle(background_color="black", font_color="grey", padding=True).print("Agent full response received, breaking streaming loop")
+                        break
+
+                # reset reasoning config until next call to reasoning_tool
+                # these were set by reasoning_tool.execute()
+                # we can not call this in message_loop_end extension because we could get called multiple times in one msg loop
+                self.set_data("chat_model_reasoning_tokens", 0)
+                self.set_data("chat_model_reasoning_effort", "none")
+
+                return response
+            except openai.APIConnectionError as e:
+                exception = True
+                reconect_attempts += 1
+                if reconect_attempts >= max_reconnect_attempts:
+                    raise e
+                else:
+                    await asyncio.sleep(1)
 
     async def rate_limiter(
         self, model_config: ModelConfig, input: str, background: bool = False

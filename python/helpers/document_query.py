@@ -8,8 +8,7 @@ os.environ["USER_AGENT"] = "@mixedbread-ai/unstructured"  # noqa E402
 from langchain_unstructured import UnstructuredLoader  # noqa E402
 
 from urllib.parse import urlparse
-from typing import Sequence, cast, List, Optional, Tuple
-import requests
+from typing import Sequence, List, Optional, Tuple
 from datetime import datetime
 
 from langchain_community.document_loaders import AsyncHtmlLoader
@@ -19,8 +18,7 @@ from langchain_community.document_transformers import MarkdownifyTransformer
 from langchain_community.document_loaders.parsers.images import TesseractBlobParser
 
 from langchain_core.documents import Document
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain.prompts import ChatPromptTemplate
 
 from langchain.storage import LocalFileStore
 from langchain.embeddings import CacheBackedEmbeddings
@@ -33,11 +31,8 @@ from langchain_community.vectorstores.utils import (
 )
 from langchain_core.embeddings import Embeddings
 
-import uuid
-
 from python.helpers.print_style import PrintStyle
 from python.helpers import files
-from python.helpers.log import LogItem
 from agent import Agent
 import models
 
@@ -67,18 +62,14 @@ class DocumentQueryStore:
         store_key = f"{memory_subdir}/document_query"
 
         if store_key not in DocumentQueryStore._stores:
-            log_item = agent.context.log.log(
+            agent.context.log.log(
                 type="util",
                 heading=f"Initializing DocumentQueryStore in '/{memory_subdir}/document_query'",
+                temp=True,
             )
 
             # Initialize embeddings model from agent config
-            embeddings_model = models.get_model(
-                models.ModelType.EMBEDDING,
-                agent.config.embeddings_model.provider,
-                agent.config.embeddings_model.name,
-                **agent.config.embeddings_model.kwargs,
-            )
+            embeddings_model = agent.get_embedding_model()
 
             # Initialize store
             store = DocumentQueryStore(agent, embeddings_model, memory_subdir)
@@ -541,24 +532,19 @@ class DocumentQueryHelper:
         self.store: DocumentQueryStore = asyncio.run(DocumentQueryStore.get(agent))
 
     async def document_qa(self, document_uri: str, questions: Sequence[str]) -> Tuple[bool, str]:
-        llm: BaseChatModel = self.agent.get_utility_model()
 
         _ = await self.document_get_content(document_uri)
         content = ""
         for question in questions:
-            # fw.document_query.optmimize_query.md
-            optimized_query = await llm.ainvoke(
-                [
-                    SystemMessage(content=self.agent.parse_prompt("fw.document_query.optmimize_query.md")),
-                    HumanMessage(content=f'Search Query: "{question}"'),
-                ]
-            )
+            human_content = f'Search Query: "{question}"'
+            system_content = self.agent.parse_prompt("fw.document_query.optmimize_query.md")
+            optimized_query = await self.agent.call_utility_model(system=system_content, message=human_content)
             PrintStyle(font_color="green", padding=True).print(
-                f"DEBUG: DocumentQueryHelper::Document_QA: {document_uri} {optimized_query.text()}"
+                f"DEBUG: DocumentQueryHelper::Document_QA: {document_uri} {optimized_query}"
             )
             chunks = await self.store.search_document(
                 document_uri=document_uri,
-                query=optimized_query.text(),
+                query=optimized_query,
                 limit=10000,
                 threshold=0.66
             )
@@ -572,13 +558,15 @@ class DocumentQueryHelper:
 
         qa_system_message = self.agent.parse_prompt("fw.document_query.system_prompt.md")
         qa_user_message = "# Document:\n{content}\n\n# Queries:\n{queries}"
-        ai_response: AIMessage = cast(AIMessage, await llm.ainvoke(
-            [
-                SystemMessage(content=qa_system_message),
-                HumanMessage(content=qa_user_message.format(content=content, queries=questions_str)),
-            ]
-        ))
-        return True, str(ai_response.text())
+
+        ai_response = await self.agent.call_chat_model(
+            prompt=ChatPromptTemplate.from_messages([
+                ("system", qa_system_message),
+                ("user", qa_user_message.format(content=content, queries=questions_str)),
+            ])
+        )
+
+        return True, ai_response
 
     async def document_get_content(self, document_uri: str) -> str:
         url = urlparse(document_uri)
