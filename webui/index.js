@@ -78,6 +78,58 @@ function setupSidebarToggle() {
 }
 document.addEventListener('DOMContentLoaded', setupSidebarToggle);
 
+// Setup an observer for collapsible messages
+function setupCollapsibleMessagesObserver() {
+    // Create a mutation observer to monitor for new collapsible messages
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    // Check if the node is an element and has the collapsible class
+                    if (node.nodeType === 1) {
+                        // Handle direct collapsible elements
+                        if (node.classList && node.classList.contains('message-collapsible')) {
+                            const heading = node.querySelector('.message-heading');
+                            if (heading && !heading.hasAttribute('listener-added')) {
+                                heading.addEventListener('click', function() {
+                                    node.classList.toggle('collapsed');
+                                });
+                                heading.setAttribute('listener-added', 'true');
+                            }
+                        }
+
+                        // Also check for collapsible elements that might be children of the added node
+                        if (node.querySelectorAll) {
+                            const collapsibleElements = node.querySelectorAll('.message-collapsible');
+                            collapsibleElements.forEach(function(collapsible) {
+                                const heading = collapsible.querySelector('.message-heading');
+                                if (heading && !heading.hasAttribute('listener-added')) {
+                                    heading.addEventListener('click', function() {
+                                        collapsible.classList.toggle('collapsed');
+                                    });
+                                    heading.setAttribute('listener-added', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    // Start observing the chat history for changes
+    const chatHistory = document.getElementById('chat-history');
+    if (chatHistory) {
+        observer.observe(chatHistory, {
+            childList: true,
+            subtree: true
+        });
+    }
+}
+
+// Initialize the collapsible messages observer when DOM is loaded
+document.addEventListener('DOMContentLoaded', setupCollapsibleMessagesObserver);
+
 export async function sendMessage() {
     try {
         const message = chatInput.value.trim();
@@ -227,12 +279,18 @@ setInterval(updateUserTime, 1000);
 function setMessage(id, type, heading, content, temp, kvps = null) {
     // Search for the existing message container by id
     let messageContainer = document.getElementById(`message-${id}`);
+    let wasCollapsed = false;
 
     if (messageContainer) {
         // Don't re-render user messages
         if (type === 'user') {
             return; // Skip re-rendering
         }
+
+        // For streaming updates to collapsible messages, we need to
+        // make sure we preserve the event handlers and collapsed state
+        wasCollapsed = messageContainer.classList.contains('collapsed');
+
         // For other types, update the message
         messageContainer.innerHTML = '';
     } else {
@@ -249,6 +307,7 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
             // Check if messages should be collapsed by default
             if (localStorage.getItem('collapseMessages') !== 'false') {
                 messageContainer.classList.add('collapsed');
+                wasCollapsed = true;
             }
         }
     }
@@ -264,15 +323,21 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     // Add click handler for collapsible messages
     if (['agent', 'tool', 'code_exe', 'browser'].includes(type)) {
         const messageHeading = messageContainer.querySelector('.message-heading');
-        if (messageHeading) {
+        if (messageHeading && !messageHeading.hasAttribute('listener-added')) {
             messageHeading.addEventListener('click', (e) => {
                 e.preventDefault();
                 messageContainer.classList.toggle('collapsed');
             });
+            messageHeading.setAttribute('listener-added', 'true');
+        }
+
+        // Restore collapsed state if needed
+        if (wasCollapsed && !messageContainer.classList.contains('collapsed')) {
+            messageContainer.classList.add('collapsed');
+        } else if (!wasCollapsed && messageContainer.classList.contains('collapsed')) {
+            messageContainer.classList.remove('collapsed');
         }
     }
-
-    if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
 
@@ -412,6 +477,17 @@ async function poll() {
 }
 
 function afterMessagesUpdate(logs) {
+    // Ensure all collapsible messages have click handlers
+    document.querySelectorAll('.message-collapsible .message-heading').forEach((heading) => {
+        if (!heading.hasAttribute('listener-added')) {
+            heading.addEventListener('click', (e) => {
+                e.preventDefault();
+                heading.closest('.message-collapsible').classList.toggle('collapsed');
+            });
+            heading.setAttribute('listener-added', 'true');
+        }
+    });
+
     if (localStorage.getItem('speech') == 'true') {
         speakMessages(logs)
     }
@@ -1320,3 +1396,35 @@ async function updatePlanningState(contextId) {
         console.error("Failed to update planning state:", error);
     }
 }
+
+// Setup event handlers once the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    setupSidebarToggle();
+
+    // Create a mutation observer to monitor for new message elements
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1 && node.classList.contains('message-collapsible')) {
+                        const heading = node.querySelector('.message-heading');
+                        if (heading && !heading.hasAttribute('listener-added')) {
+                            heading.addEventListener('click', function() {
+                                node.classList.toggle('collapsed');
+                            });
+                            heading.setAttribute('listener-added', 'true');
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    // Start observing the chat history for changes
+    observer.observe(document.getElementById('chat-history'), {
+        childList: true,
+        subtree: true
+    });
+
+    // ... existing event handlers setup
+});
