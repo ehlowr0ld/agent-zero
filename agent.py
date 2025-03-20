@@ -13,7 +13,7 @@ import models
 import openai
 
 from langchain_core.prompt_values import ChatPromptValue
-from python.helpers import extract_tools, rate_limiter, files, errors, history, tokens
+from python.helpers import extract_tools, files, errors, history, tokens
 from python.helpers.print_style import PrintStyle
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, HumanMessagePromptTemplate, StringPromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
@@ -633,7 +633,7 @@ class Agent:
         callback: Callable[[str], Awaitable[None]] | None = None,
         background: bool = False,
     ):
-        max_reconnect_attempts = 3
+        max_reconnect_attempts = 6
 
         prompt = ChatPromptTemplate.from_messages(
             [SystemMessage(content=system), HumanMessage(content=message)]
@@ -653,11 +653,13 @@ class Agent:
         reconect_attempts = 0
         while exception and reconect_attempts <= max_reconnect_attempts:
             try:
+                if reconect_attempts > 0:
+                    PrintStyle(background_color="black", font_color="grey", padding=True).print("Reconnecting to utility model")
+                    response = ""
+
                 async for chunk in (prompt | model).astream({}):
                     exception = False
-
-                    if reconect_attempts > 0:
-                        PrintStyle(background_color="black", font_color="grey", padding=True).print("Reconnecting to utility model")
+                    reconect_attempts = 0
 
                     await self.handle_intervention()  # wait for intervention and handle it, if paused
 
@@ -680,9 +682,9 @@ class Agent:
     async def call_chat_model(
         self,
         prompt: ChatPromptTemplate,
-        callback: Callable[[str, str], Awaitable[None]] | None = None,
+        callback: Callable[[str, str], Awaitable[None]] | None = None
     ):
-        max_reconnect_attempts = 3
+        max_reconnect_attempts = 6
 
         response = ""
 
@@ -696,11 +698,13 @@ class Agent:
         reconect_attempts = 0
         while exception and reconect_attempts <= max_reconnect_attempts:
             try:
+                if reconect_attempts > 0:
+                    PrintStyle(background_color="black", font_color="grey", padding=True).print("Reconnecting to chat model")
+                    response = ""
+
                 async for chunk in (prompt | model).astream({}):
                     exception = False
-
-                    if reconect_attempts > 0:
-                        PrintStyle(background_color="black", font_color="grey", padding=True).print("Reconnecting to chat model")
+                    reconect_attempts = 0
 
                     await self.handle_intervention()  # wait for intervention and handle it, if paused
 
@@ -714,6 +718,7 @@ class Agent:
 
                     # if the agent has responded, we can break the streaming loop to forbid multiple json stanzas or plaintext comments
                     if self.get_data('agent_responded'):
+                        self.set_data('agent_responded', False)
                         PrintStyle(background_color="black", font_color="grey", padding=True).print("Agent full response received, breaking streaming loop")
                         break
 
