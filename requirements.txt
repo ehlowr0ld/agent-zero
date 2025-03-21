@@ -42,3 +42,4 @@ uv==0.6.6
 uvenv==3.6.5
 uvx==2.5.1
 supervisor==4.2.5
+crontab==1.0.1

@@ -1,6 +1,6 @@
 from python.helpers.api import ApiHandler, Input, Output, Request, Response
 from python.helpers import persist_chat
-from python.api.chat_rename import ChatNames
+from python.helpers.chat_names import ChatNames
 from python.helpers.tasklist import TaskList
 from python.helpers.notepad import Notepad
 from agent import AgentContext
