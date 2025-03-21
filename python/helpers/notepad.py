@@ -27,7 +27,7 @@ class Notepad(BaseModel):
         for file in list_files("memory/notepads", "*.json"):
             # extract uid from file by cutting absolute path prefix off and json suffix
             uid = file.split("/")[-1].replace(".json", "")
-            cls.__instance[uid] = cls.model_validate_json(read_file(get_abs_path("memory/notepads", file)))
+            cls.__instance[uid] = cls.model_validate_json(read_file(get_abs_path("memory/notepads", f"{uid}.json")))
         return list(cls.__instance.values())
 
     @classmethod

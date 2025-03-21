@@ -54,7 +54,7 @@ class TaskList(BaseModel):
         for file in list_files("memory/tasklists", "*.json"):
             # extract uid from file by cutting absolute path prefix off and json suffix
             uid = file.split("/")[-1].replace(".json", "")
-            cls.__instances[uid] = cls.model_validate_json(read_file(get_abs_path("memory/tasklists", file)))
+            cls.__instances[uid] = cls.model_validate_json(read_file(get_abs_path("memory/tasklists", f"{uid}.json")))
         return list(cls.__instances.values())
 
     @classmethod
