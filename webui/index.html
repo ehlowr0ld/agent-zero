@@ -87,28 +87,74 @@
                         </svg>Settings</button>
 
                 </div>
+
+                <!-- Tabs container -->
+                <div class="tabs-container">
+                    <div class="tabs">
+                        <div class="tab active" id="chats-tab">Chats</div>
+                        <div class="tab" id="tasks-tab">Tasks</div>
+                    </div>
+                </div>
+
                 <!-- Chats List -->
                 <div class="config-section" id="chats-section" x-data="{ contexts: [], selected: '' }"
-                    x-show="contexts.length > 0">
-                    <h3>Chats</h3>
+                    x-show="contexts.length > 0 || true">
                     <div class="chats-list-container">
-                        <ul class="config-list">
+                        <ul class="config-list" x-show="contexts.length > 0">
                             <template x-for="context in contexts">
                                 <li>
-                                    <span :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
+                                    <div :class="{'chat-list-button': true, 'font-bold': context.id === selected}"
                                         @click="selected = context.id; selectChat(context.id)">
-                                        <span class="chat-name"
-                                              x-text="$el.getAttribute('data-editing') === 'true' ? '' : (context.name || `Chat #${context.id.substring(0,8)}`)"
-                                              @dblclick="editChatName(context.id, $event)"
-                                              :data-chat-id="context.id"></span>
-                                    </span>
-                                    <div class="chat-actions">
-                                        <button class="edit-button" @click="editChatName(context.id)" title="Rename chat">✎</button>
-                                        <button class="edit-button" @click="killChat(context.id)" title="Delete chat">X</button>
+                                        <div x-data="{ editing: false, newName: '', originalName: '' }" class="chat-container">
+                                            <span class="chat-name"
+                                                x-show="!editing"
+                                                x-text="context.name || `Chat #${context.id.substring(0,8)}`"
+                                                @dblclick.stop="editing = true; originalName = context.name || `Chat #${context.id.substring(0,8)}`; newName = originalName; $nextTick(() => $refs.nameInput.focus())"
+                                                :data-chat-id="context.id"></span>
+                                            <span class="edit-field-container" x-show="editing">
+                                                <input x-ref="nameInput" type="text" class="chat-name-edit"
+                                                    x-model="newName"
+                                                    @keydown.enter.prevent="editChatName(context.id, newName); editing = false"
+                                                    @keydown.escape.prevent="editing = false"
+                                                    @keydown.stop @click.stop
+                                                    @blur="editChatName(context.id, newName); editing = false">
+                                            </span>
+                                            <div class="chat-actions">
+                                                <button class="edit-button" @click.stop="editing = true; originalName = context.name || `Chat #${context.id.substring(0,8)}`; newName = originalName; $nextTick(() => $refs.nameInput.focus())" title="Rename chat">✎</button>
+                                                <button class="edit-button" @click.stop="killChat(context.id)" title="Delete chat" :data-chat-id="context.id">X</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </li>
                             </template>
                         </ul>
+                        <div class="empty-list-message" x-show="contexts.length === 0">
+                            <p><i>No chats to list.</i></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks List -->
+                <div class="config-section" id="tasks-section" x-data="{ tasks: [], selected: '' }"
+                    style="display: none;">
+                    <div class="tasks-list-container">
+                        <ul class="config-list" x-show="tasks.length > 0">
+                            <template x-for="task in tasks">
+                                <li>
+                                    <div :class="{'chat-list-button': true, 'font-bold': task.id === selected}"
+                                        @click="selected = task.id; selectChat(task.id)">
+                                        <div class="chat-container">
+                                            <span class="task-name"
+                                                x-text="task.name || `Task #${task.id.substring(0,8)}`"
+                                                :data-task-id="task.id"></span>
+                                        </div>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                        <div class="empty-list-message" x-show="tasks.length === 0">
+                            <p><i>No tasks to list.</i></p>
+                        </div>
                     </div>
                 </div>
             </div>

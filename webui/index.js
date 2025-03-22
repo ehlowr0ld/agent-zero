@@ -10,6 +10,7 @@ const sendButton = document.getElementById('send-button');
 const inputSection = document.getElementById('input-section');
 const statusSection = document.getElementById('status-section');
 const chatsSection = document.getElementById('chats-section');
+const tasksSection = document.getElementById('tasks-section');
 const progressBar = document.getElementById('progress-bar');
 const autoScrollSwitch = document.getElementById('auto-scroll-switch');
 const timeDate = document.getElementById('time-date-container');
@@ -22,6 +23,8 @@ let connectionStatus = false
 
 // Initialize the toggle button
 setupSidebarToggle();
+// Initialize tabs
+setupTabs();
 
 function isMobile() {
     return window.innerWidth <= 768;
@@ -481,7 +484,12 @@ async function poll() {
     let updated = false
     try {
         const response = await sendJsonData("/poll", { log_from: lastLogVersion, context });
-        //console.log(response)
+
+        // Check if the response is valid
+        if (!response) {
+            console.error("Invalid response from poll endpoint");
+            return false;
+        }
 
         if (!context) setContext(response.context)
         if (response.context != context) return //skip late polls after context change
@@ -499,6 +507,9 @@ async function poll() {
             }
             afterMessagesUpdate(response.logs)
         }
+
+        lastLogVersion = response.log_version;
+        lastLogGuid = response.log_guid;
 
         updateProgress(response.log_progress, response.log_progress_active)
 
@@ -518,11 +529,95 @@ async function poll() {
         // Update status icon state
         setConnectionStatus(true)
 
+        // Update chats list and sort by created_at time (newer first)
         const chatsAD = Alpine.$data(chatsSection);
-        chatsAD.contexts = response.contexts;
+        const contexts = response.contexts || [];
+        chatsAD.contexts = contexts.sort((a, b) =>
+            (b.created_at || 0) - (a.created_at || 0)
+        );
 
-        lastLogVersion = response.log_version;
-        lastLogGuid = response.log_guid;
+        // Update tasks list and sort by creation time (newer first)
+        const tasksSection = document.getElementById('tasks-section');
+        if (tasksSection) {
+            const tasksAD = Alpine.$data(tasksSection);
+            let tasks = response.tasks || [];
+
+            // Only update the tasks array if it's actually different
+            // This prevents unnecessary reactivity triggers
+            const currentTaskIds = new Set((tasksAD.tasks || []).map(t => t.id));
+            const newTaskIds = new Set(tasks.map(t => t.id));
+
+            // Check if the sets are different sizes or have different contents
+            const needsUpdate = currentTaskIds.size !== newTaskIds.size ||
+                tasks.some(task => !currentTaskIds.has(task.id));
+
+            if (needsUpdate) {
+                if (tasks.length > 0) {
+                    // Sort the tasks by creation time
+                    const sortedTasks = [...tasks].sort((a, b) =>
+                        (b.created_at || 0) - (a.created_at || 0)
+                    );
+
+                    // Use a clean array assignment to avoid duplicating elements
+                    tasksAD.tasks = sortedTasks;
+                } else {
+                    // Make sure to use a new empty array instance
+                    tasksAD.tasks = [];
+                }
+            }
+        }
+
+        // Make sure the active context is properly selected in both lists
+        if (context) {
+            // Update selection in the active tab
+            const activeTab = localStorage.getItem('activeTab') || 'chats';
+
+            if (activeTab === 'chats') {
+                chatsAD.selected = context;
+                localStorage.setItem('lastSelectedChat', context);
+
+                // Check if this context exists in the chats list
+                const contextExists = contexts.some(ctx => ctx.id === context);
+
+                // If it doesn't exist in the chats list but we're in chats tab, try to select the first chat
+                if (!contextExists && contexts.length > 0) {
+                    const firstChatId = contexts[0].id;
+                    setContext(firstChatId);
+                    chatsAD.selected = firstChatId;
+                    localStorage.setItem('lastSelectedChat', firstChatId);
+                }
+            } else if (activeTab === 'tasks' && tasksSection) {
+                const tasksAD = Alpine.$data(tasksSection);
+                tasksAD.selected = context;
+                localStorage.setItem('lastSelectedTask', context);
+
+                // Check if this context exists in the tasks list
+                const taskExists = response.tasks?.some(task => task.id === context);
+
+                // If it doesn't exist in the tasks list but we're in tasks tab, try to select the first task
+                if (!taskExists && response.tasks?.length > 0) {
+                    const firstTaskId = response.tasks[0].id;
+                    setContext(firstTaskId);
+                    tasksAD.selected = firstTaskId;
+                    localStorage.setItem('lastSelectedTask', firstTaskId);
+                }
+            }
+        } else if (response.tasks && response.tasks.length > 0 && localStorage.getItem('activeTab') === 'tasks') {
+            // If we're in tasks tab with no selection but have tasks, select the first one
+            const firstTaskId = response.tasks[0].id;
+            setContext(firstTaskId);
+            if (tasksSection) {
+                const tasksAD = Alpine.$data(tasksSection);
+                tasksAD.selected = firstTaskId;
+                localStorage.setItem('lastSelectedTask', firstTaskId);
+            }
+        } else if (contexts.length > 0 && localStorage.getItem('activeTab') === 'chats') {
+            // If we're in chats tab with no selection but have chats, select the first one
+            const firstChatId = contexts[0].id;
+            setContext(firstChatId);
+            chatsAD.selected = firstChatId;
+            localStorage.setItem('lastSelectedChat', firstChatId);
+        }
 
     } catch (error) {
         console.error('Error:', error);
@@ -596,49 +691,144 @@ window.newChat = async function () {
 }
 
 window.killChat = async function (id) {
+    if (!id) {
+        console.error("No chat ID provided for deletion");
+        return;
+    }
+
+    console.log("Deleting chat with ID:", id);
+
     try {
         const chatsAD = Alpine.$data(chatsSection);
-        let found, other
+        console.log("Current contexts before deletion:", JSON.stringify(chatsAD.contexts.map(c => ({ id: c.id, name: c.name }))));
+
+        // Find an alternate chat to switch to if we're deleting the current one
+        let alternateChat = null;
         for (let i = 0; i < chatsAD.contexts.length; i++) {
-            if (chatsAD.contexts[i].id == id) {
-                found = true
-            } else {
-                other = chatsAD.contexts[i]
+            if (chatsAD.contexts[i].id !== id) {
+                alternateChat = chatsAD.contexts[i];
+                break;
             }
-            if (found && other) break
         }
 
-        if (context == id && found) {
-            if (other) setContext(other.id)
-            else setContext(generateGUID())
+        // If we're deleting the currently selected chat, switch to another one first
+        if (context === id) {
+            if (alternateChat) {
+                setContext(alternateChat.id);
+            } else {
+                // If no other chats, create a new empty context
+                setContext(generateGUID());
+            }
         }
 
-        if (found) {
-            // Delete the chat and its name
-            await sendJsonData("/chat_remove", { context: id });
-            // The backend will handle removing the chat name
-        }
+        // Delete the chat on the server
+        await sendJsonData("/chat_remove", { context: id });
 
-        updateAfterScroll()
+        // Update the UI manually to ensure the correct chat is removed
+        // Deep clone the contexts array to prevent reference issues
+        const updatedContexts = chatsAD.contexts.filter(ctx => ctx.id !== id);
+        console.log("Updated contexts after deletion:", JSON.stringify(updatedContexts.map(c => ({ id: c.id, name: c.name }))));
 
+        // Force UI update by creating a new array
+        chatsAD.contexts = [...updatedContexts];
+
+        updateAfterScroll();
+
+        toast("Chat deleted successfully", "success");
     } catch (e) {
-        window.toastFetchError("Error creating new chat", e)
+        console.error("Error deleting chat:", e);
+        window.toastFetchError("Error deleting chat", e);
     }
 }
 
+// Function to ensure proper UI state when switching contexts
+function ensureProperTabSelection(contextId) {
+    // Get current active tab
+    const activeTab = localStorage.getItem('activeTab') || 'chats';
+
+    // First attempt to determine if this is a task or chat based on the task list
+    const tasksSection = document.getElementById('tasks-section');
+    let isTask = false;
+
+    if (tasksSection) {
+        const tasksAD = Alpine.$data(tasksSection);
+        if (tasksAD && tasksAD.tasks) {
+            isTask = tasksAD.tasks.some(task => task.id === contextId);
+        }
+    }
+
+    // If we're selecting a task but are in the chats tab, switch to tasks tab
+    if (isTask && activeTab === 'chats') {
+        // Store this as the last selected task before switching
+        localStorage.setItem('lastSelectedTask', contextId);
+        activateTab('tasks');
+        return true;
+    }
+
+    // If we're selecting a chat but are in the tasks tab, switch to chats tab
+    if (!isTask && activeTab === 'tasks') {
+        // Store this as the last selected chat before switching
+        localStorage.setItem('lastSelectedChat', contextId);
+        activateTab('chats');
+        return true;
+    }
+
+    return false;
+}
+
 window.selectChat = async function (id) {
-    setContext(id)
-    updateAfterScroll()
+    if (id === context) return //already selected
+
+    // Check if we need to switch tabs based on the context type
+    const tabSwitched = ensureProperTabSelection(id);
+
+    // If we didn't switch tabs, proceed with normal selection
+    if (!tabSwitched) {
+        // Switch to the new context - this will clear chat history and reset tracking variables
+        setContext(id);
+
+        // Update both contexts and tasks lists to reflect the selected item
+        const chatsAD = Alpine.$data(chatsSection);
+        const tasksSection = document.getElementById('tasks-section');
+        if (tasksSection) {
+            const tasksAD = Alpine.$data(tasksSection);
+            tasksAD.selected = id;
+        }
+        chatsAD.selected = id;
+
+        // Store this selection in the appropriate localStorage key
+        const activeTab = localStorage.getItem('activeTab') || 'chats';
+        if (activeTab === 'chats') {
+            localStorage.setItem('lastSelectedChat', id);
+        } else if (activeTab === 'tasks') {
+            localStorage.setItem('lastSelectedTask', id);
+        }
+
+        // Trigger an immediate poll to fetch content
+        poll();
+    }
+
+    updateAfterScroll();
 }
 
 export const setContext = function (id) {
-    if (id == context) return
-    context = id
-    lastLogGuid = ""
-    lastLogVersion = 0
-    lastSpokenNo = 0
+    if (id == context) return;
+    context = id;
+    // Always reset the log tracking variables when switching contexts
+    // This ensures we get fresh data from the backend
+    lastLogGuid = "";
+    lastLogVersion = 0;
+    lastSpokenNo = 0;
+
+    // Clear the chat history immediately to avoid showing stale content
+    chatHistory.innerHTML = "";
+
+    // Update both selected states
     const chatsAD = Alpine.$data(chatsSection);
-    chatsAD.selected = id
+    const tasksAD = Alpine.$data(tasksSection);
+
+    chatsAD.selected = id;
+    tasksAD.selected = id;
 
     // Immediately get the reasoning and deep search states for the new context
     updateReasoningState(id);
@@ -1303,73 +1493,60 @@ async function updateDeepSearchState(contextId) {
     }
 }
 
-window.editChatName = function(id, event) {
-    // Get the name element
-    const nameElement = event?.target || document.querySelector(`.chat-name[data-chat-id="${id}"]`);
-    if (!nameElement) return;
+window.editChatName = async function(id, newName) {
+    // Don't do anything if no ID
+    if (!id) {
+        console.error("No chat ID provided for renaming");
+        return;
+    }
 
-    // Set a flag to indicate we're editing
-    nameElement.setAttribute('data-editing', 'true');
+    // If newName is an event object (old usage), exit early
+    if (newName instanceof Event) {
+        console.error("Received event object instead of name string");
+        return;
+    }
 
-    // Create input element
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'chat-name-edit';
-    input.value = nameElement.textContent;
+    // If newName is empty, use a placeholder
+    if (!newName || newName.trim() === '') {
+        newName = `Chat #${id.substring(0,8)}`;
+    }
 
-    // Replace text with input
-    nameElement.textContent = '';
-    nameElement.appendChild(input);
-    input.focus();
+    // Get the current name from the UI
+    const currentName = document.querySelector(`.chat-name[data-chat-id="${id}"]`)?.textContent.trim();
 
-    // Handle save on enter or cancel on escape
-    input.addEventListener('keydown', async function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const newName = input.value.trim();
-            if (newName && newName !== nameElement.textContent) {
-                try {
-                    const response = await sendJsonData("/chat_rename", {
-                        chat_id: id,
-                        name: newName
-                    });
+    // Only update if the name has changed - prevents unnecessary saves
+    if (newName === currentName) {
+        console.log(`Name unchanged for chat ${id}: "${newName}"`);
+        return;
+    }
 
-                    if (response) {
-                        const chatsAD = Alpine.$data(chatsSection);
-                        const chat = chatsAD.contexts.find(c => c.id === id);
-                        if (chat) {
-                            chat.name = newName;
-                            chatsAD.contexts = [...chatsAD.contexts];
-                        }
-                        toast("Chat renamed successfully", "success");
-                    }
-                } catch (e) {
-                    toastFetchError("Error renaming chat", e);
-                }
+    console.log(`Renaming chat ${id} from "${currentName}" to "${newName}"`);
+
+    try {
+        const response = await sendJsonData("/chat_rename", {
+            chat_id: id,
+            name: newName
+        });
+
+        if (response) {
+            // Force a refresh of the chat list by updating the specific context
+            const chatsAD = Alpine.$data(chatsSection);
+            const chatIndex = chatsAD.contexts.findIndex(c => c.id === id);
+            if (chatIndex !== -1) {
+                // Create a new contexts array to trigger Alpine reactivity
+                const updatedContexts = [...chatsAD.contexts];
+                updatedContexts[chatIndex] = {
+                    ...updatedContexts[chatIndex],
+                    name: newName
+                };
+                chatsAD.contexts = updatedContexts;
+                toast("Chat renamed successfully", "success");
             }
-            nameElement.textContent = input.value;
-            nameElement.removeAttribute('data-editing');
-        } else if (e.key === 'Escape') {
-            nameElement.textContent = input.defaultValue;
-            nameElement.removeAttribute('data-editing');
         }
-    });
-
-    // Handle save on blur
-    input.addEventListener('blur', function() {
-        // Small delay to allow for Enter key processing
-        setTimeout(() => {
-            if (nameElement.getAttribute('data-editing') === 'true') {
-                nameElement.textContent = input.value || input.defaultValue;
-                nameElement.removeAttribute('data-editing');
-            }
-        }, 100);
-    });
-
-    // Stop click event from bubbling to prevent chat selection
-    input.addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
+    } catch (e) {
+        console.error("Error renaming chat:", e);
+        toastFetchError("Error renaming chat", e);
+    }
 };
 
 // Remove the old renameChat function since we're using editChatName now
@@ -1448,7 +1625,108 @@ async function updatePlanningState(contextId) {
 // Setup event handlers once the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', function() {
     setupSidebarToggle();
+    setupTabs();
+    initializeActiveTab();
 
     // Set up the collapsible messages handler
     setupCollapsibleMessagesObserver();
 });
+
+// Setup tabs functionality
+function setupTabs() {
+    const chatsTab = document.getElementById('chats-tab');
+    const tasksTab = document.getElementById('tasks-tab');
+
+    if (chatsTab && tasksTab) {
+        chatsTab.addEventListener('click', function() {
+            activateTab('chats');
+        });
+
+        tasksTab.addEventListener('click', function() {
+            activateTab('tasks');
+        });
+    } else {
+        console.error('Tab elements not found');
+        setTimeout(setupTabs, 100); // Retry setup
+    }
+}
+
+function activateTab(tabName) {
+    const chatsTab = document.getElementById('chats-tab');
+    const tasksTab = document.getElementById('tasks-tab');
+    const chatsSection = document.getElementById('chats-section');
+    const tasksSection = document.getElementById('tasks-section');
+
+    // Get current context to preserve before switching
+    const currentContext = context;
+
+    // Store the current selection for the active tab before switching
+    const previousTab = localStorage.getItem('activeTab');
+    if (previousTab === 'chats') {
+        localStorage.setItem('lastSelectedChat', currentContext);
+    } else if (previousTab === 'tasks') {
+        localStorage.setItem('lastSelectedTask', currentContext);
+    }
+
+    // Reset all tabs and sections
+    chatsTab.classList.remove('active');
+    tasksTab.classList.remove('active');
+    chatsSection.style.display = 'none';
+    tasksSection.style.display = 'none';
+
+    // Remember the last active tab in localStorage
+    localStorage.setItem('activeTab', tabName);
+
+    // Activate selected tab and section
+    if (tabName === 'chats') {
+        chatsTab.classList.add('active');
+        chatsSection.style.display = '';
+
+        // Restore previous chat selection
+        const lastSelectedChat = localStorage.getItem('lastSelectedChat');
+        if (lastSelectedChat && lastSelectedChat !== currentContext) {
+            // Only switch if there's a stored selection and it's different from current
+            setContext(lastSelectedChat);
+        }
+    } else if (tabName === 'tasks') {
+        tasksTab.classList.add('active');
+        tasksSection.style.display = 'flex';
+        tasksSection.style.flexDirection = 'column';
+
+        // Restore previous task selection
+        const lastSelectedTask = localStorage.getItem('lastSelectedTask');
+        if (lastSelectedTask && lastSelectedTask !== currentContext) {
+            // Only switch if there's a stored selection and it's different from current
+            setContext(lastSelectedTask);
+        }
+    }
+
+    // Request a poll update
+    poll();
+}
+
+// Add function to initialize active tab and selections from localStorage
+function initializeActiveTab() {
+    // Initialize selection storage if not present
+    if (!localStorage.getItem('lastSelectedChat')) {
+        localStorage.setItem('lastSelectedChat', '');
+    }
+    if (!localStorage.getItem('lastSelectedTask')) {
+        localStorage.setItem('lastSelectedTask', '');
+    }
+
+    const activeTab = localStorage.getItem('activeTab') || 'chats';
+    activateTab(activeTab);
+}
+
+/*
+ * A0 Chat UI
+ *
+ * Tasks tab functionality:
+ * - Tasks are displayed in the Tasks tab with the same mechanics as chats
+ * - Both lists are sorted by creation time (newest first)
+ * - Selection state is preserved across tab switches
+ * - The active tab is remembered across sessions
+ * - Tasks use the same context system as chats for communication with the backend
+ * - Future support for renaming and deletion will be implemented later
+ */

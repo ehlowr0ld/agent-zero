@@ -14,15 +14,14 @@ from pydantic import BaseModel, Field, PrivateAttr
 from python.helpers.files import get_abs_path, exists, write_file, read_file, make_dirs
 from agent import Agent, AgentContext, UserMessage
 from initialize import initialize
-from python.helpers.persist_chat import export_json_chat, load_json_chats
+from python.helpers.persist_chat import export_json_chat, load_json_chats, load_tmp_chats, save_tmp_chat
 from python.helpers.chat_names import ChatNames
 from python.helpers.print_style import PrintStyle
 from python.helpers.defer import DeferredTask
-from python.helpers.persist_chat import CHATS_FOLDER
+from python.helpers.persist_chat import CHATS_FOLDER, TASKS_FOLDER
 from python.helpers import errors
 
 SCHEDULER_FOLDER = "memory/scheduler"
-TASKS_FOLDER = CHATS_FOLDER
 
 
 class TaskSchedule(BaseModel):
@@ -38,7 +37,7 @@ class TaskSchedule(BaseModel):
 
 class AdHocTask(BaseModel):
     uuid: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    state: Literal["idle", "running"] = Field(default="idle")
+    state: Literal["idle", "running", "disabled"] = Field(default="idle")
     name: str = Field()
     system_prompt: str
     prompt: str
@@ -81,7 +80,7 @@ class AdHocTask(BaseModel):
 
     def update(self,
                name: str | None = None,
-               state: Literal["idle", "running"] | None = None,
+               state: Literal["idle", "running", "disabled"] | None = None,
                system_prompt: str | None = None,
                prompt: str | None = None,
                attachments: list[str] | None = None,
@@ -117,7 +116,7 @@ class AdHocTask(BaseModel):
 
 class ScheduledTask(BaseModel):
     uuid: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    state: Literal["idle", "running"] = Field(default="idle")
+    state: Literal["idle", "running", "disabled"] = Field(default="idle")
     name: str
     schedule: TaskSchedule
     system_prompt: str
@@ -160,7 +159,7 @@ class ScheduledTask(BaseModel):
 
     def update(self,
                name: str | None = None,
-               state: Literal["idle", "running"] | None = None,
+               state: Literal["idle", "running", "disabled"] | None = None,
                system_prompt: str | None = None,
                prompt: str | None = None,
                attachments: list[str] | None = None,
@@ -299,46 +298,57 @@ class TaskScheduler:
         context.planning = task.ctx_planning
         context.reasoning = task.ctx_reasoning
         context.deep_search = task.ctx_deep_search == "on"
-        chat_json = export_json_chat(context)
-        chat_file = get_abs_path(TASKS_FOLDER, task.uuid, "chat.json")
-        make_dirs(chat_file)
-        write_file(chat_file, chat_json)
+        # chat_json = export_json_chat(context)
+        # chat_file = get_abs_path(TASKS_FOLDER, task.uuid, "chat.json")
+        # make_dirs(chat_file)
+        # write_file(chat_file, chat_json)
+        save_tmp_chat(context, TASKS_FOLDER)
         chat_names = ChatNames.get_instance()
         chat_names.set_name(context.id, "TASK: " + task.name)
         return context
 
     async def _get_chat_context(self, task: Union[ScheduledTask, AdHocTask]) -> AgentContext:
-        chat_file = get_abs_path(TASKS_FOLDER, task.uuid, "chat.json")
-        if exists(chat_file):
-            chat = read_file(chat_file)
-            context = AgentContext.get(load_json_chats([chat])[0])
+        ctxids = load_tmp_chats(TASKS_FOLDER)
+        # chat_file = get_abs_path(TASKS_FOLDER, task.uuid, "chat.json")
+        # if exists(chat_file):
+        if task.uuid in ctxids:
+            # chat = read_file(chat_file)
+            context = AgentContext.get(task.uuid)
             if isinstance(context, AgentContext):
                 self._printer.print(
-                    f"Scheduler Task {task.name} loaded from chat {task.uuid}"
+                    f"Scheduler Task {task.name} loaded from task {task.uuid}, context ok"
                 )
+                context.id = task.uuid
+                save_tmp_chat(context, TASKS_FOLDER)
                 return context
             else:
                 self._printer.print(
-                    f"Scheduler Task {task.name} loaded from chat {task.uuid} but failed to load context"
+                    f"Scheduler Task {task.name} loaded from task {task.uuid} but failed to load context"
                 )
                 return await self.__new_context(task)
         else:
             self._printer.print(
-                f"Scheduler Task {task.name} loaded from chat {task.uuid} but chat file not found"
+                f"Scheduler Task {task.name} loaded from task {task.uuid} but context not found"
             )
             return await self.__new_context(task)
 
     async def _persist_chat(self, task: Union[ScheduledTask, AdHocTask], context: AgentContext):
-        chat_json = export_json_chat(context)
-        chat_file = get_abs_path(TASKS_FOLDER, task.uuid, "chat.json")
-        make_dirs(chat_file)
-        write_file(chat_file, chat_json)
+        # chat_json = export_json_chat(context)
+        # chat_file = get_abs_path(TASKS_FOLDER, task.uuid, "chat.json")
+        # make_dirs(chat_file)
+        # write_file(chat_file, chat_json)
+        context.id = task.uuid
+        save_tmp_chat(context, TASKS_FOLDER)
 
     async def _run_task(self, task: Union[ScheduledTask, AdHocTask]):
 
         async def _run_task_wrapper(task: Union[ScheduledTask, AdHocTask]):
+            if task.state != "idle":
+                self._printer.print(f"Scheduler Task {task.name} state is '{task.state}', skipping")
+                return
+
             if task.state == "running":
-                self._printer.print(f"Scheduler Task {task.name} already running")
+                self._printer.print(f"Scheduler Task {task.name} already running, skipping")
                 return
 
             try:
@@ -402,7 +412,7 @@ class TaskScheduler:
                 result = await agent.monologue()
                 task.update(last_result="SUCCESS: " + result)
 
-                self._printer.print(f"Scheduler Task {task.name} completed: {result}")
+                self._printer.print(f"Scheduler Task '{task.name}' completed: {result}")
 
                 await self._persist_chat(task, context)
 
