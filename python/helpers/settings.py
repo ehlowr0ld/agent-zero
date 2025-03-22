@@ -1,4 +1,3 @@
-
 import json
 import os
 import re
@@ -93,6 +92,7 @@ class SettingsSection(TypedDict, total=False):
     title: str
     description: str
     fields: list[SettingsField]
+    tab: str  # Indicates which tab this section belongs to
 
 
 class SettingsOutput(TypedDict):
@@ -219,6 +219,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "title": "Chat Model",
         "description": "Selection and settings for main chat model used by Agent Zero",
         "fields": chat_model_fields,
+        "tab": "agent",
     }
 
     # main model section
@@ -288,6 +289,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "title": "Utility model",
         "description": "Smaller, cheaper, faster model for handling utility tasks like organizing memory, preparing prompts, summarizing.",
         "fields": util_model_fields,
+        "tab": "agent",
     }
 
     # embedding model section
@@ -347,6 +349,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "title": "Embedding Model",
         "description": "Settings for the embedding model used by Agent Zero.",
         "fields": embed_model_fields,
+        "tab": "agent",
     }
 
     # embedding model section
@@ -396,6 +399,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "title": "Web Browser Model",
         "description": "Settings for the web browser model. Agent Zero uses <a href='https://github.com/browser-use/browser-use' target='_blank'>browser-use</a> agentic framework to handle web interactions.",
         "fields": browser_model_fields,
+        "tab": "agent",
     }
 
     # # Memory settings section
@@ -460,6 +464,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "title": "Authentication",
         "description": "Settings for authentication to use Agent Zero Web UI.",
         "fields": auth_fields,
+        "tab": "external",
     }
 
     # api keys model section
@@ -489,6 +494,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "title": "API Keys",
         "description": "API keys for model providers and services used by Agent Zero.",
         "fields": api_keys_fields,
+        "tab": "external",
     }
 
     # Agent config section
@@ -551,6 +557,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "title": "Agent Config",
         "description": "Agent parameters.",
         "fields": agent_fields,
+        "tab": "agent",
     }
 
     dev_fields: list[SettingsField] = []
@@ -616,6 +623,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "title": "Development",
         "description": "Parameters for A0 framework development. RFCs (remote function calls) are used to call functions on another A0 instance. You can develop and debug A0 natively on your local system while redirecting some functions to A0 instance in docker. This is crucial for development as A0 needs to run in standardized environment to support all features.",
         "fields": dev_fields,
+        "tab": "developer",
     }
 
     # Speech to text section
@@ -687,6 +695,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "title": "Speech to Text",
         "description": "Voice transcription preferences and server turn detection settings.",
         "fields": stt_fields,
+        "tab": "agent",
     }
 
     # Add the section to the result
