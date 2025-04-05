@@ -621,6 +621,11 @@ function afterMessagesUpdate(logs) {
     // Ensure event delegation for collapsible messages is set up
     setupCollapsibleMessagesObserver();
 
+    // Auto-scroll to bottom if enabled
+    if (autoScroll) {
+        scrollToBottom();
+    }
+
     if (localStorage.getItem('speech') == 'true') {
         speakMessages(logs)
     }
@@ -831,6 +836,9 @@ export const getContext = function () {
 
 window.toggleAutoScroll = async function (_autoScroll) {
     autoScroll = _autoScroll;
+    if (autoScroll) {
+        scrollToBottom();
+    }
 }
 
 window.toggleJson = async function (showJson) {
@@ -1774,3 +1782,9 @@ function openTaskDetail(taskId) {
 
 // Make the function available globally
 window.openTaskDetail = openTaskDetail;
+
+// Add a scrollToBottom function after the updateAfterScroll function definition (around line 1200)
+function scrollToBottom() {
+    const chatHistory = document.getElementById('chat-history');
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+}
