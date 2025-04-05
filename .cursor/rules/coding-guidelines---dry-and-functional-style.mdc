@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Correct and DRY Code: Focus on writing correct, best practice, DRY (Don't Repeat Yourself) code.
+- Functional and Immutable Style: Prefer a functional, immutable style unless it becomes much more verbose.

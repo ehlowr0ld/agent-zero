@@ -1,0 +1,79 @@
+# WARNING FLAGS FILE
+# CRITICAL: This file is part of a mandatory three-file context retention system:
+# 1. .context.md - High-level project context
+# 2. .warning-flags (THIS FILE) - Critical reminder flags
+# 3. .cursor/notebooks/ai_assistant_scratchpad.md - AI assistant working notes
+#
+# ALL THREE FILES MUST BE MAINTAINED AND CROSS-REFERENCED
+# ESPECIALLY CRITICAL IN CONTAINERIZED ENVIRONMENT
+
+CONTAINERIZED_ENVIRONMENT=TRUE
+CONTAINER_PERSISTENCE=VOLUMES_ONLY
+ALPINE_JS_FRAMEWORK=TRUE
+ALPINE_JS_PROPERTY_NAMES_MUST_MATCH_HTML_DEFINITIONS=TRUE
+CSS_PREFIX_REQUIRED=TRUE
+STANDARD_SECTION_PATTERN_REQUIRED=TRUE
+BUTTON_STYLING_MUST_BE_PRESERVED=TRUE
+SPEECH_MODULE_REQUIRES_SAFETY_CHECKS=TRUE
+DOCUMENT_ALL_CHANGES=TRUE
+TAB_SYSTEM_FOLLOWS_PATTERN=TRUE
+LEFT_PANEL_RECENTLY_FIXED=TRUE
+REVIEW_CONTEXT_BEFORE_CHANGES=TRUE
+CONTEXT_RETENTION_SYSTEM_MANDATORY=TRUE
+BUTTON_STYLING_USES_SHARED_VARIABLES=TRUE
+LEFT_PANEL_TAB_UNDERLINE_MUST_BE_GREY=TRUE
+SAVE_BUTTON_MUST_MATCH_NEW_TASK_BUTTON=TRUE
+DO_NOT_USE_IMPORTANT_IN_CSS=TRUE
+LOCALSTORAGE_KEYS_USE_CAMELCASE=TRUE
+ALPINE_STORE_INIT_CRITICAL=TRUE
+COMPONENT_NAMING_FOLLOWS_PATTERNS=TRUE
+STORE_ACCESS_REQUIRES_SAFETY_CHECKS=TRUE
+TASK_CONTEXT_IDENTIFIED_BY_SCHEDULER_UUID=TRUE
+CONTEXT_RESET_PRESERVES_TASK_ASSOCIATION=TRUE
+TASKS_MUST_BE_PROPERLY_CLEANED_UP=TRUE
+SCHEDULER_SETTINGS_MODAL_IMPLEMENTED=TRUE
+SCHEDULER_NAMING_CONVENTION_REQUIRED=TRUE
+SCHEDULER_COMPONENTS_USE_ALPINE_DATA=TRUE
+SCHEDULER_CSS_PREFIX_REQUIRED=TRUE
+SCHEDULER_VALIDATION_MIRRORED_CLIENT_SERVER=TRUE
+NEVER_CREATE_ALTERNATE_IMPLEMENTATIONS=TRUE
+BE_CONSERVATIVE_WITH_EXISTING_FUNCTIONALITY=TRUE
+DO_NOT_REUSE_OR_MODIFY_EXISTING_CSS_CLASSES=TRUE
+CREATE_NEW_DISTINCT_CSS_CLASSES_INSTEAD=TRUE
+USE_EXISTING_TASK_SCHEDULER_API=TRUE
+VERIFY_ENDPOINTS_BEFORE_REFERENCING=TRUE
+API_ENDPOINTS_NAMED_AFTER_PYTHON_FILES=TRUE
+EXTRACT_SHARED_CODE_TO_AVOID_DUPLICATION=TRUE
+PYTHON_MODULES_NEED_PROPER_INIT_FILES=TRUE
+FRONTEND_API_PATHS_MUST_BE_VERIFIED=TRUE
+TEST_CHANGES_INCREMENTALLY=TRUE
+CHECK_ACTUAL_FILES_BEFORE_GUESSING_PATTERNS=TRUE
+API_HANDLERS_AUTO_LOADED_NEVER_MANUALLY_REGISTER=TRUE
+SCHEDULER_TICK_IS_ONLY_FOR_CRON_EXECUTION=TRUE
+SCHEDULER_TASK_RUN_IS_FOR_MANUAL_EXECUTION=TRUE
+SCHEDULER_TAB_SELECTION_FIXED=TRUE
+ALPINE_JS_REACTIVITY_REQUIRES_SPECIAL_HANDLING=TRUE
+TAB_SWITCHING_USES_TWO_STEP_PROCESS=TRUE
+
+# Agent Zero Warning Flags (Potential Issues & Gotchas)
+
+# State & Concurrency
+RELIANCE_ON_POLLING_FOR_STATE=true # Frontend UI updates depend heavily on `/poll` reflecting backend state changes accurately and timely.
+FILE_PERSISTENCE_LOCKING=review_needed # State is persisted in JSON files (chats, tasks, names). Locking seems present in task_scheduler.py but needs review for potential race conditions elsewhere (e.g., persist_chat.py).
+BACKGROUND_TASK_MANAGEMENT=complex # Agent processing runs in background threads (`DeferredTask`). Cancellation/error handling needs careful management, especially on context switches/resets.
+
+# Frontend & UI
+ALPINE_REACTIVITY_COMPLEXITY=high # Tab switching (esp. settings modal scheduler tab) and dynamic content updates have required complex workarounds (`setTimeout`, two-step updates, global listeners).
+UI_STATE_VS_BACKEND_STATE_SYNC=potential_lag # Frontend state (Alpine stores/data) is updated by polling, potentially lagging behind the true backend state between polls.
+
+# Configuration & Initialization
+SETTINGS_APPLY_IMPACT=significant # Saving settings (`/settings_set`) triggers backend re-initialization (`initialize.py`), agent config updates, and potentially model preloading, which could be slow or disruptive.
+SENSITIVE_DATA_HANDLING=split # Settings logic separates sensitive keys/passwords into `.env` while general settings go to `tmp/settings.json`. Ensure this separation is consistently maintained.
+
+# Backend Logic
+HISTORY_COMPRESSION_COMPLEXITY=high # `history.py` implements complex logic for compressing/summarizing chat history based on token limits and ratios. Potential for bugs or unexpected truncation.
+ERROR_HANDLING_IN_AGENT_LOOP=critical # Exceptions in `agent.monologue` need careful handling (`RepairableException` vs. others) to ensure stability.
+
+# Environment
+DOCKER_FILE_PATHS=container_specific # All file paths referenced in the code (e.g., `tmp/`, `memory/`) are relative to the *inside* of the Docker container.
+RFC_CONFIGURATION=dev_feature # Remote Function Call (RFC) setup appears intended for development workflows (local -> docker) and requires careful configuration (`settings.py`).

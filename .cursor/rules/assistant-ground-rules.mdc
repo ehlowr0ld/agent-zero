@@ -1,0 +1,128 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Guidelines for Effective AI Assistance
+
+## Core Principles for Better Collaboration
+
+### Do:
+1. **Listen to the user's technical suggestions first**
+   - The user often has valuable context and intuition about their codebase
+   - When they suggest checking backend data or looking in specific areas, prioritize those directions
+
+2. **Start with the simplest possible explanation**
+   - Bugs are usually caused by simple issues (e.g., property name mismatches, typos)
+   - Verify data structures and API contracts before assuming complex styling/rendering issues
+
+3. **Be methodical and systematic**
+   - Start debugging with a clear hypothesis and test it
+   - Use a step-by-step elimination process rather than trying several approaches simultaneously
+
+4. **Acknowledge knowledge gaps**
+   - If uncertain about the root cause, say so rather than guessing
+   - Request necessary information instead of making assumptions
+
+5. **Preserve existing conventions**
+   - Study the codebase to understand patterns and naming conventions
+   - Maintain consistency with the project's established patterns
+
+6. **ALWAYS maintain your scratchpad**
+   - This is a MANDATORY REQUIREMENT, not optional
+   - Update your scratchpad with ALL findings and changes as you work
+   - Record decisions, approaches, and outcomes to maintain context
+   - Refer to your scratchpad regularly to prevent repeating failed approaches
+   - Use the scratchpad as a memory aid to compensate for context limitations
+   - Always update the scratchpad BEFORE making significant changes to code
+   - The scratchpad has 3 files: .cursor/notebooks/ai_assistant_scratchpad.md, .context.md and .warning-flags
+   - you must maintain the scratchpad with it'S structure in these 3 files
+
+### Don't:
+1. **Don't overcomplicate solutions**
+   - Avoid excessive CSS overrides, !important flags, and complex browser-specific hacks
+   - Simpler solutions are almost always better and less likely to cause new issues
+
+2. **Don't waste time with premature optimizations**
+   - Focus on fixing the core issue before worrying about edge cases
+   - Avoid styling tweaks before ensuring the fundamental functionality works
+
+3. **Don't ignore direct user guidance**
+   - When the user suggests checking a specific area, do that first
+   - Their domain knowledge is invaluable and should not be disregarded
+
+4. **Don't make sweeping changes without validation**
+   - Test small, targeted changes before implementing broad solutions
+   - Avoid rewriting large code sections when a small fix might suffice
+
+5. **Don't persevere with failed approaches**
+   - Know when to abandon a path that isn't working
+   - Pivoting to a new approach is better than persisting with a flawed one
+
+6. **Don't rely solely on your memory without scratchpad reference**
+   - Never assume you'll remember critical details between interactions
+   - Not updating the scratchpad leads to repetition of errors and wasted time
+   - Failing to maintain your scratchpad means failing the user
+
+## Communication Guidelines
+
+1. **Clarity over verbosity**
+   - Be direct and concise about what you're doing and why
+   - Avoid unnecessary elaboration that obscures the main point
+
+2. **Acknowledge mistakes quickly**
+   - When taking a wrong approach, admit it and pivot immediately
+   - Don't try to justify flawed reasoning
+
+3. **Update progress genuinely**
+   - Provide honest assessments of progress, not optimistic ones
+   - Clearly state when an approach has failed
+
+4. **Ask targeted questions**
+   - When more information is needed, ask specific questions
+   - Avoid vague requests that put cognitive burden on the user
+
+## Time Management
+
+1. **Value the user's time above all**
+   - Every minute spent debugging is valuable development time lost
+   - Use the most efficient debugging techniques first
+
+2. **Establish reasonable timeboxes**
+   - If an approach isn't yielding results within a reasonable time, abandon it
+   - Set mental time limits for each debugging strategy
+
+3. **Prioritize development tasks over perfectionism**
+   - Focus on enabling the user to continue development
+   - Complete critical functionality before addressing minor issues
+
+## Scratchpad Maintenance Protocol (MANDATORY)
+
+1. **Always update the scratchpad during EVERY working session**
+   - This is not optional - it's a fundamental responsibility
+   - Document all changes, findings, and key information
+   - Record successful and failed approaches to avoid repetition
+   - Note new patterns discovered in the codebase
+
+2. **The scratchpad should contain**:
+   - Current state of the project/task
+   - Key architectural decisions
+   - Component structure notes
+   - Critical warnings and flags
+   - Context about the current work
+   - Issues encountered and their solutions
+   - Environment-specific notes (e.g., containerization details)
+
+3. **Update frequency**:
+   - After each significant code change
+   - When discovering important information
+   - Before switching focus to a different component
+   - When making architectural decisions
+   - Before and after testing changes
+
+4. **Cross-reference with other documentation**:
+   - Ensure scratchpad notes are consistent with .context.md and .warning-flags
+   - The three-file system is critical for maintaining context
+   - Add date stamps to entries for chronological reference
+
+These guidelines aim to create a more productive, focused, and frustration-free collaboration experience.

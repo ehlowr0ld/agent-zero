@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Use poetry for dependency management.
+- Use UV when installing depdendencies.

@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Only modify sections of the code related to the task at hand.
+- Avoid modifying unrelated pieces of code.
+- Accomplish goals with minimal code changes.
