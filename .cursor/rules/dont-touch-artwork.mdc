@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+!!! No matter what, never make changes to SVG icons or any other artwork without consulting with the user. You should make autonomous decisions where applicable, UI artwork and images are not your responsibility to change. This is critical that you obey to this!

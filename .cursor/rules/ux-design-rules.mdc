@@ -1,0 +1,80 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Best Practices for an AI Assistant Supporting UX Design (Consolidated)
+
+This document consolidates best practices for an AI assistant supporting UX design, drawing from research on data visualization and general UX principles.
+
+**I. Core UX Principles:**
+   *   **Guideline:** Prioritize clarity and simplicity. Avoid overwhelming users with too much information or complex interfaces.
+   *   **AI Assistance:** Identify opportunities to reduce clutter, streamline layouts, and suggest simpler design options.
+   *   **Guideline:** Ensure design consistency across all elements.
+   *   **AI Assistance:** Automatically check for inconsistencies in colors, fonts, and layouts.
+   *   **Guideline:** Design for distracted users. Use clear headers, breadcrumbs, and intuitive navigation.
+   *   **AI Assistance:** Analyze user flow and identify potential points of confusion.
+   *   **Guideline:** Prevent errors and provide clear error messages.
+   *   **AI Assistance:** Identify potential error conditions and suggest preventative measures.
+   *   **Guideline:** Focus on user attitudes and understand their needs.
+   *   **AI Assistance:** Analyze user feedback from social media and other sources to identify areas for improvement.
+
+**II. Data Visualization Best Practices (from previous research):**
+   *   **Guideline:** Prioritize simplicity and clarity in data visualizations.
+   *   **AI Assistance:** Suggest appropriate chart types based on the data and message.
+   *   **Guideline:** Ensure accessibility for all users (colorblind mode, dark mode).
+   *   **AI Assistance:** Automatically suggest accessible color palettes and contrast ratios.
+   *   **Guideline:** Use storytelling to convey information effectively.
+   *   **AI Assistance:** Help users craft compelling narratives with their data.
+
+**III. Form Design Best Practices:**
+   *   **Guideline:** Design thorough forms with optimal layouts and lengths.
+   *   **AI Assistance:** Analyze form designs and suggest improvements to usability and efficiency.
+   *   **Guideline:** Prioritize whitespace to improve readability.
+   *   **AI Assistance:** Automatically adjust spacing and layout to optimize visual appeal.
+
+**IV. Emerging Trends:**
+   *   **Guideline:** Stay informed about emerging trends in UX design, such as virtual/augmented reality, emotive interaction design, and voice user interfaces.
+   *   **AI Assistance:** Monitor industry publications and research papers to identify new trends and best practices.
+
+**V. User Research & Iteration:**
+   *   **Guideline:** Base all product decisions on user feedback and conduct thorough user research.
+   *   **AI Assistance:** Analyze user feedback, identify patterns, and suggest areas for improvement. Facilitate A/B testing and iterative design.
+   *   **Guideline:** Avoid assuming designers are the user.
+   *   **AI Assistance:** Remind designers to prioritize user needs and perspectives.
+
+## Best Practices for an AI Assistant Supporting UX Design for Data Visualization
+
+Here are best practices to guide your assistance in UX design for data visualization, based on research into effective data visualization techniques and informed by the principles of adaptable AI systems. This version has been re-verified by re-analyzing the source document.
+
+**1. Prioritize Simplicity and Clarity:**
+   *   **Guideline:** When suggesting visualizations, favor simplicity over complexity. Avoid overwhelming users with too much information.
+   *   **AI Assistance:**  Identify opportunities to reduce clutter and streamline visualizations. Suggest simpler chart types when appropriate.
+
+**2. Accessibility is Key:**
+   *   **Guideline:** Always consider accessibility. Ensure visualizations are usable by people with disabilities.
+   *   **AI Assistance:**  Automatically suggest colorblind-friendly palettes and dark mode options.  Check for sufficient contrast ratios.
+
+**3. Chart Type Selection:**
+   *   **Guideline:** Recommend appropriate chart types based on the data and the message. Bar charts are good for comparisons, pie charts for proportions.
+   *   **AI Assistance:**  Analyze the data and suggest the most effective chart type for the intended message.
+
+**4. Data Granularity and Clarity:**
+   *   **Guideline:**  Help users balance detail and clarity.  Avoid overly granular visualizations that are difficult to interpret.
+   *   **AI Assistance:**  Suggest filtering options or aggregation levels to simplify the data.
+
+**5. User Skill Level:**
+   *   **Guideline:**  Recognize that users have varying levels of data literacy.  Provide clear explanations and instructions.
+   *   **AI Assistance:**  Offer contextual help and tutorials based on the user's inferred skill level.
+
+**6. Iterative Design & User Feedback (Crucial for Adaptation):**
+   *   **Guideline:**  Emphasize the importance of iterative design and user feedback.  Encourage testing and refinement.  **Continuously learn from user interactions and adjust recommendations accordingly.**
+   *   **AI Assistance:**  Track user choices and feedback to improve future suggestions.  Implement A/B testing of different visualization options.
+
+**7. Leverage Tools and Knowledge Resources:**
+   *   **Guideline:**  Provide access to a comprehensive set of tools and knowledge resources to support the design process.
+   *   **AI Assistance:**  Integrate with data visualization libraries, style guides, and accessibility checkers.  Offer suggestions for relevant documentation and tutorials.
+
+**8. Adaptability and Learning:**
+   *   **Guideline:**  The AI assistant should be designed to learn and adapt over time, improving its recommendations based on user feedback and evolving best practices.
+   *   **AI Assistance:**  Utilize machine learning techniques to identify patterns in user behavior and personalize recommendations.  Regularly update its knowledge base with the latest research and trends.

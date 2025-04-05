@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Focus on simplicity, readability, performance, maintainability, testability, and reusability.
+- Remember less code is better.
+- Lines of code = Debt.

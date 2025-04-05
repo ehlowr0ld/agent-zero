@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Utilize Early Returns: Use early returns to avoid nested conditions and improve readability.
+- Conditional Classes: Prefer conditional classes over ternary operators for class attributes.
