@@ -1,5 +1,17 @@
 {
-    "python.analysis.typeCheckingMode": "standard",
-    "windsurfPyright.analysis.diagnosticMode": "workspace",
-    "windsurfPyright.analysis.typeCheckingMode": "standard",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.diagnosticMode": "workspace",
+    "python.pythonPath": "/home/rafael/Workspace/Repos/rafael/a0-local/.venv/bin/python3.12",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/.venv/lib/python3.12/site-packages/",
+        "${workspaceFolder}"
+    ],
+    "python.analysis.include": [
+        "${workspaceFolder}/.venv/lib/python3.12/site-packages/",
+        "${workspaceFolder}"
+    ],
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH" : "${workspaceFolder}:${workspaceFolder}/.venv/lib/python3.12/site-packages/",
+        "PYTHONHOME" : ""
+    }
 }
