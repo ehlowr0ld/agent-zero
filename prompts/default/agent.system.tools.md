@@ -23,3 +23,5 @@
 {{ include './agent.system.tool.coding_agent.md' }}
 
 {{ include './agent.system.tool.document_query.md' }}
+
+{{ include './agent.system.tool.tasklist_tool.md' }}
