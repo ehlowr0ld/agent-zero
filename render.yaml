@@ -1,12 +1,12 @@
-
+# Agent Zero
 services:
   - type: web
-    runtime: docker
+    runtime: image
     name: agent-zero
     repo: docker://ehlowr0ld/agent-zero-run:multitenancy
     scaling:
       minInstances: 1
-      maxInstances: 1
+      maxInstances: 2
       targetMemoryPercent: 90
       targetCPUPercent: 90
     healthCheckPath: /health
