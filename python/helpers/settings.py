@@ -1067,7 +1067,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "mcp",
     }
 
-   # Secrets section
+    # Secrets section
     secrets_fields: list[SettingsField] = []
 
     secrets_manager = SecretsManager.get_instance()
@@ -1338,6 +1338,7 @@ def _read_settings_file() -> Settings | None:
         content = files.read_file(SETTINGS_FILE)
         parsed = json.loads(content)
         return normalize_settings(parsed)
+    return None
 
 
 def _write_settings_file(settings: Settings):
@@ -1498,9 +1499,9 @@ def _apply_settings(previous: Settings | None):
                     type="info", content="Updating MCP settings...", temp=True
                 )
 
-                mcp_config = MCPConfig.get_instance()
+                mcp_config = MCPConfig.get_instance("default")
                 try:
-                    MCPConfig.update(mcp_servers)
+                    MCPConfig.update(mcp_servers, profile="default")
                 except Exception as e:
                     AgentContext.log_to_all(
                         type="error",

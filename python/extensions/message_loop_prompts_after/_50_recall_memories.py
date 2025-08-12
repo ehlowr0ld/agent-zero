@@ -2,8 +2,7 @@ import asyncio
 from python.helpers.extension import Extension
 from python.helpers.memory import Memory
 from agent import LoopData
-from python.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY_THRESHOLD
-from python.helpers import dirty_json, errors, settings, log 
+from python.helpers import dirty_json, errors, settings, log
 
 
 DATA_NAME_TASK = "_recall_memories_task"
@@ -57,7 +56,6 @@ class RecallMemories(Extension):
             del extras["solutions"]
         if "graph_knowledge" in extras:
             del extras["graph_knowledge"]
-
 
         set = settings.get_settings()
         # try:
@@ -116,12 +114,24 @@ class RecallMemories(Extension):
         # get memory database
         db = await Memory.get(self.agent)
 
+        # build owner filter to include global and current profile
+        profile = self.agent.config.profile or ""
+        allowed_owners = {"", "default"}
+        if profile:
+            allowed_owners.add(profile)
+
+        def mem_filter(meta: dict):
+            return meta.get("area") in {Memory.Area.MAIN.value, Memory.Area.FRAGMENTS.value} and meta.get("owner", "") in allowed_owners
+
+        def sol_filter(meta: dict):
+            return meta.get("area") == Memory.Area.SOLUTIONS.value and meta.get("owner", "") in allowed_owners
+
         # search for general memories and fragments
         memories = await db.search_similarity_threshold(
             query=query,
             limit=set["memory_recall_memories_max_search"],
             threshold=set["memory_recall_similarity_threshold"],
-            filter=f"area == '{Memory.Area.MAIN.value}' or area == '{Memory.Area.FRAGMENTS.value}'",  # exclude solutions
+            filter=mem_filter,
         )
 
         # search for solutions
@@ -129,7 +139,7 @@ class RecallMemories(Extension):
             query=query,
             limit=set["memory_recall_solutions_max_search"],
             threshold=set["memory_recall_similarity_threshold"],
-            filter=f"area == '{Memory.Area.SOLUTIONS.value}'",  # exclude solutions
+            filter=sol_filter,
         )
 
         if not memories and not solutions:
@@ -185,7 +195,6 @@ class RecallMemories(Extension):
                     type="error", heading="Failed to filter relevant memories", content=err
                 )
                 filter_inds = []
-
 
         # limit the number of memories and solutions
         memories = memories[: set["memory_recall_memories_max_result"]]
