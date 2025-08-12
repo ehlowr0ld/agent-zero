@@ -1,23 +1,28 @@
-// copy button
+// message actions and components
 import { openImageModal } from "./image_modal.js";
 import { marked } from "../vendor/marked/marked.esm.js";
 import { store as _messageResizeStore } from "/components/messages/resize/message-resize-store.js"; // keep here, required in html
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
 import { store as terminalStore } from "/components/terminal/terminal-store.js"; // terminal store
+import { addActionButtonsToElement } from "/components/messages/action-buttons/simple-action-buttons.js";
 
 const chatHistory = document.getElementById("chat-history");
 
 let messageGroup = null;
 
+// Simplified implementation - no complex interactions needed
+
 export function setMessage(id, type, heading, content, temp, kvps = null) {
   // Search for the existing message container by id
   let messageContainer = document.getElementById(`message-${id}`);
+  let isNewMessage = false;
 
   if (messageContainer) {
     // Don't clear innerHTML - we'll do incremental updates
     // messageContainer.innerHTML = "";
   } else {
     // Create a new container if not found
+    isNewMessage = true;
     const sender = type === "user" ? "user" : "ai";
     messageContainer = document.createElement("div");
     messageContainer.id = `message-${id}`;
@@ -65,42 +70,10 @@ export function setMessage(id, type, heading, content, temp, kvps = null) {
     messageGroup.appendChild(messageContainer);
     chatHistory.appendChild(messageGroup);
   }
+
+  // Simplified implementation - no setup needed
+
   return messageContainer;
-}
-
-function createCopyButton() {
-  const button = document.createElement("button");
-  button.className = "copy-button";
-  button.textContent = "Copy";
-
-  button.addEventListener("click", async function (e) {
-    e.stopPropagation();
-    const container = this.closest(".msg-content, .kvps-row, .message-text");
-    let textToCopy;
-
-    if (container.classList.contains("kvps-row")) {
-      textToCopy = container.querySelector(".kvps-val").innerText;
-    } else if (container.classList.contains("message-text")) {
-      textToCopy = container.querySelector("span").innerText;
-    } else {
-      textToCopy = container.querySelector("span").innerText;
-    }
-
-    try {
-      await navigator.clipboard.writeText(textToCopy);
-      const originalText = button.textContent;
-      button.classList.add("copied");
-      button.textContent = "Copied!";
-      setTimeout(() => {
-        button.classList.remove("copied");
-        button.textContent = originalText;
-      }, 1000);
-    } catch (err) {
-      console.error("Failed to copy text:", err);
-    }
-  });
-
-  return button;
 }
 
 function createTerminalButton(heading, kvps) {
@@ -269,6 +242,9 @@ export function _drawMessage(
     messageDiv.appendChild(bodyDiv);
   }
 
+  // reapply scroll position or autoscroll
+  const scroller = new Scroller(bodyDiv);
+
   // Handle KVPs incrementally
   drawKvpsIncremental(bodyDiv, kvps, false);
 
@@ -295,9 +271,6 @@ export function _drawMessage(
       processedContent = convertPathsToLinks(processedContent);
       processedContent = addBlankTargetsToLinks(processedContent);
 
-      // reapply scroll position or autoscroll
-      const scroller = new Scroller(contentDiv);
-
       spanElement.innerHTML = processedContent;
 
       // KaTeX rendering for markdown
@@ -309,14 +282,10 @@ export function _drawMessage(
         });
       }
 
-      // Ensure copy button exists
-      if (!contentDiv.querySelector(".copy-button")) {
-        addCopyButtonToElement(contentDiv);
-      }
+      // Ensure action buttons exist
+      addActionButtonsToElement(bodyDiv);
       adjustMarkdownRender(contentDiv);
 
-      // reapply scroll position or autoscroll
-      scroller.reApplyScroll();
     } else {
       let preElement = bodyDiv.querySelector(".msg-content");
       if (!preElement) {
@@ -334,25 +303,13 @@ export function _drawMessage(
       if (!spanElement) {
         spanElement = document.createElement("span");
         preElement.appendChild(spanElement);
-
-        // Add click handler for small screens (only once)
-        spanElement.addEventListener("click", () => {
-          copyText(spanElement.textContent, spanElement);
-        });
       }
-
-      // reapply scroll position or autoscroll
-      const scroller = new Scroller(preElement);
 
       spanElement.innerHTML = convertHTML(content);
 
-      // Ensure copy button exists
-      if (!preElement.querySelector(".copy-button")) {
-        addCopyButtonToElement(preElement);
-      }
+      // Ensure action buttons exist
+      addActionButtonsToElement(bodyDiv);
 
-      // reapply scroll position or autoscroll
-      scroller.reApplyScroll();
     }
   } else {
     // Remove content if it exists but content is empty
@@ -361,6 +318,9 @@ export function _drawMessage(
       existingContent.remove();
     }
   }
+
+  // reapply scroll position or autoscroll
+  scroller.reApplyScroll();
 
   if (followUp) {
     messageContainer.classList.add("message-followup");
@@ -523,12 +483,7 @@ export function drawMessageUser(
     spanElement.innerHTML = escapeHTML(content);
     textDiv.appendChild(spanElement);
 
-    // Add click handler
-    textDiv.addEventListener("click", () => {
-      copyText(content, textDiv);
-    });
-
-    addCopyButtonToElement(textDiv);
+    addActionButtonsToElement(textDiv);
     messageDiv.appendChild(textDiv);
   }
 
@@ -802,6 +757,8 @@ function drawKvps(container, kvps, latex) {
         addValue(value);
       }
 
+      addActionButtonsToElement(tdiv);
+
       // autoscroll the KVP value if needed
       // if (getAutoScroll()) #TODO needs a better redraw system
       setTimeout(() => {
@@ -829,12 +786,6 @@ function drawKvps(container, kvps, latex) {
           span.innerHTML = convertHTML(value);
           pre.appendChild(span);
           tdiv.appendChild(pre);
-          addCopyButtonToElement(row);
-
-          // Add click handler
-          span.addEventListener("click", () => {
-            copyText(span.textContent, span);
-          });
 
           // KaTeX rendering for markdown
           if (latex) {
@@ -908,6 +859,8 @@ function drawKvpsIncremental(container, kvps, latex) {
       // Clear and rebuild content (for now - could be optimized further)
       tdiv.innerHTML = "";
 
+      addActionButtonsToElement(tdiv);
+
       if (Array.isArray(value)) {
         for (const item of value) {
           addValue(item, tdiv);
@@ -949,16 +902,11 @@ function drawKvpsIncremental(container, kvps, latex) {
         pre.appendChild(span);
         tdiv.appendChild(pre);
 
-        // Only add copy button if it doesn't exist
-        const row = tdiv.closest(".kvps-row");
-        if (row && !row.querySelector(".copy-button")) {
-          addCopyButtonToElement(row);
-        }
-
-        // Add click handler
-        span.addEventListener("click", () => {
-          copyText(span.textContent, span);
-        });
+        // Add action buttons to the row
+        // const row = tdiv.closest(".kvps-row");
+        // if (row) {
+          // addActionButtonsToElement(pre);
+        // }
 
         // KaTeX rendering for markdown
         if (latex) {
@@ -1001,18 +949,6 @@ function convertImageTags(content) {
   );
 
   return updatedContent;
-}
-
-async function copyText(text, element) {
-  try {
-    await navigator.clipboard.writeText(text);
-    element.classList.add("copied");
-    setTimeout(() => {
-      element.classList.remove("copied");
-    }, 2000);
-  } catch (err) {
-    console.error("Failed to copy text:", err);
-  }
 }
 
 function convertHTML(str) {

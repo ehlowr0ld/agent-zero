@@ -165,7 +165,7 @@ export async function importComponent(path, targetElement) {
     await Promise.all(loadPromises);
 
     // Remove loading indicator
-    const loadingEl = targetElement.querySelector(".loading");
+    const loadingEl = targetElement.querySelector(':scope > .loading');
     if (loadingEl) {
       targetElement.removeChild(loadingEl);
     }

@@ -23,7 +23,7 @@ chat:
   deepseek:
     name: DeepSeek
     litellm_provider: deepseek
-  gemini:
+  google:
     name: Google
     litellm_provider: gemini
   groq:

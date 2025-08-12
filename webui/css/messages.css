@@ -1,5 +1,6 @@
 /* Chat History */
 #chat-history {
+  position: relative;
   display: -webkit-flex;
   display: flex;
   flex-direction: column;
@@ -79,20 +80,25 @@
 .message-user {
   background-color: #4a4a4a;
   /* border-bottom-right-radius: var(--spacing-xxs); */
-  min-width: 195px;
+  /* min-width: 195px; */
   text-align: end;
 }
 
 .message-user > div {
   padding-top: var(--spacing-xs);
-  font-family: "Roboto Mono", monospace;
+  /* font-family: "Roboto Mono", monospace; */
   font-optical-sizing: auto;
   -webkit-font-optical-sizing: auto;
-  font-size: var(--font-size-small);
+  font-size: var(--font-size-smaller);
 }
 
-.message-user .message-text{
+.message-user .message-text {
   text-align: start;
+  font-family: var(--font-family-main);
+}
+
+.message-user .message-text pre {
+  font-family: var(--font-family-main);
 }
 
 .message-ai {
@@ -207,6 +213,7 @@
   border-radius: 0.5em;
   margin-top: 0.5em;
   padding: 0.3em;
+  font-family: var(--font-family-code);
 }
 
 /* Agent and AI Info */
@@ -227,6 +234,10 @@
 .kvps-val pre {
   white-space: pre-wrap; /* keep \n, collapse no spaces, allow wrapping */
   word-break: break-word; /* optional – forces really long “words” to break */
+  font-family: var(--font-family-code);
+  font-optical-sizing: auto;
+  -webkit-font-optical-sizing: auto;
+  font-size: 0.75rem;
 }
 
 .msg-kvps th,
@@ -279,72 +290,11 @@
   opacity: 1;
 }
 
-/* Copy button styles */
-.copy-button {
-  position: absolute;
-  right: 0;
-  top: var(--spacing-sm);
-  background: none;
-  border: none;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  padding-right: 0;
-  cursor: pointer;
-  text-decoration: underline;
-  text-wrap: nowrap;
-  opacity: 0;
-  -webkit-transition: opacity var(--transition-speed) ease-in-out;
-  transition: opacity var(--transition-speed) ease-in-out;
-  color: inherit;
-  font-size: 12px;
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
-}
-
-.copy-button:hover {
-  opacity: 0.8 !important;
-}
-
-.msg-content:hover .copy-button,
-.kvps-row:hover .copy-button,
-.message-text:hover .copy-button {
-  opacity: 0.6;
-}
-
-.copy-button.copied {
-  font-family: "Rubik", Arial, Helvetica, sans-serif !important;
-  opacity: 1 !important;
-}
-
-.msg-thoughts .copy-button {
-  top: -12px !important;
-}
-
-.message-user .copy-button {
-  top: -15px !important;
-  left: -13px !important;
-  right: 99% !important;
-}
-
-.message-agent-response .copy-button {
-  top: -22px !important;
-  right: 0 !important;
-  padding-right: 0px !important;
-}
-
-.message-info .copy-button {
-  top: -22px !important;
-  right: 0 !important;
-  padding-right: 0px !important;
-}
-
-.message-tool .copy-button {
-  top: -12px !important;
-  right: 0 !important;
-}
-
-.msg-output .copy-button {
-  top: -6px !important;
-  right: 0 !important;
-}
+/* Legacy copy button styles - DEPRECATED
+ * These styles have been replaced by the new action buttons component
+ * located at /components/messages/action-buttons/message-action-buttons.css
+ * Remove this section after confirming all functionality works with action buttons
+ */
 
 /* Make message containers relative for absolute positioning of copy buttons */
 .msg-content,
@@ -368,7 +318,7 @@
 }
 
 .kvps-val {
-  margin: 0.65rem 0 0.65rem 0.4rem;
+  /* margin: 0.65rem 0 0.65rem 0.4rem; */
   white-space: pre-wrap;
 }
 
