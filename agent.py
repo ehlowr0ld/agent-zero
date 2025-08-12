@@ -751,25 +751,21 @@ class Agent:
             if tool:
                 # Execute all tools synchronously - background execution is now handled by run_task wrapper
                 await self.handle_intervention()
-
                 # Allow extensions to preprocess tool arguments (e.g., unmask secrets)
                 await self.call_extensions("tool_execute_before", tool_args=tool_args or {}, tool_name=tool_name)
-
                 # Call tool hooks for compatibility
                 await tool.before_execution(**tool_args)
                 await self.handle_intervention()
-
+                # Ensure tool sees the updated arguments after pre-processing
+                tool.args = tool_args or tool.args
                 response = await tool.execute(**tool_args)
                 await self.handle_intervention()
-
                 # Allow extensions to postprocess tool response (e.g., mask secrets)
                 response_data = {"response": response}
-                await self.call_extensions("tool_execute_after", response_data=response_data, tool_name=tool_name)
+                await self.call_extensions("tool_execute_after", response_data=response_data, tool_name=tool_name, tool_args=tool_args)
                 processed_response = response_data["response"]
-
                 # Store result to history
                 self.hist_add_tool_result(tool_name, getattr(processed_response, "message", ""))
-
                 await tool.after_execution(processed_response)
                 await self.handle_intervention()
                 if processed_response.break_loop:
