@@ -17,7 +17,7 @@
     },
     "dav-mcp-server": {
       "command": "npx",
-      "args": ["-y", "./mcp/dav-mcp-server"],
+      "args": ["-y", "agents/project_manager/mcp/dav-mcp-server"],
       "env": {
         "CARDDAV_URL": "https://dav.ud-mail.de/carddav",
         "CALDAV_URL": "https://dav.ud-mail.de/caldav/Y2FsOi8vMC85Mg",
