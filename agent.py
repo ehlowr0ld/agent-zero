@@ -389,8 +389,9 @@ class Agent:
                             self.hist_add_ai_response(agent_response)
                             # process tools requested in agent message
                             tools_result = await self.process_tools(agent_response)
-                            if tools_result:  # final response of message loop available
-                                return tools_result  # break the execution if the task is done
+                            # Expect a mapping with message/error/break_loop
+                            if isinstance(tools_result, dict) and tools_result.get("break_loop"):
+                                return tools_result.get("message") or tools_result.get("error") or ""
 
                     # exceptions inside message loop:
                     except InterventionException as e:
@@ -765,7 +766,12 @@ class Agent:
                 await self.handle_intervention()
                 # Ensure tool sees the updated arguments after pre-processing
                 tool.args = tool_args or tool.args
-                response = await tool.execute(**tool_args)
+                try:
+                    response = await tool.execute(**tool_args)
+                except Exception as e:
+                    # Keep logging/history via try/except at caller, but return mapping with error
+                    PrintStyle(font_color="red", padding=True).print(f"Error: {e}")
+                    return {"message": "", "error": f"Error: {e}", "break_loop": False, "tool": tool_name}
                 await self.handle_intervention()
                 # Allow extensions to postprocess tool response (e.g., mask secrets)
                 response_data = {"response": response}
@@ -775,10 +781,8 @@ class Agent:
                 self.hist_add_tool_result(tool_name, getattr(processed_response, "message", ""))
                 await tool.after_execution(processed_response)
                 await self.handle_intervention()
-                if processed_response.break_loop:
-                    return processed_response.message
-                else:
-                    return None
+                msg_text = getattr(processed_response, "message", None) or f"Tool {tool_name} executed successfully"
+                return {"message": msg_text, "error": "", "break_loop": bool(getattr(processed_response, "break_loop", False)), "tool": tool_name}
             else:
                 error_detail = (
                     f"Tool '{raw_tool_name}' not found or could not be initialized."
@@ -788,6 +792,7 @@ class Agent:
                 self.context.log.log(
                     type="error", content=f"{self.agent_name}: {error_detail}"
                 )
+                return {"message": "", "error": f"Error: {error_detail}", "break_loop": False, "tool": tool_name}
         else:
             warning_msg_misformat = self.read_prompt("fw.msg_misformat.md")
             self.hist_add_warning(warning_msg_misformat)
@@ -796,6 +801,7 @@ class Agent:
                 type="error",
                 content=f"{self.agent_name}: Message misformat, no valid tool request found.",
             )
+            return {"message": "", "error": "Error: Message misformat, no valid tool request found.", "break_loop": False, "tool": ""}
 
     async def handle_reasoning_stream(self, stream: str):
         await self.call_extensions(
