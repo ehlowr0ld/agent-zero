@@ -333,6 +333,9 @@ class Agent:
                             await self.call_extensions(
                                 "reasoning_stream_chunk", loop_data=self.loop_data, stream_data=stream_data
                             )
+                            # Stream masked chunk after extensions processed it
+                            if stream_data.get("chunk"):
+                                printer.stream(stream_data["chunk"])
                             # Use the potentially modified full text for downstream processing
                             await self.handle_reasoning_stream(stream_data["full"])
 
@@ -345,6 +348,9 @@ class Agent:
                             await self.call_extensions(
                                 "response_stream_chunk", loop_data=self.loop_data, stream_data=stream_data
                             )
+                            # Stream masked chunk after extensions processed it
+                            if stream_data.get("chunk"):
+                                printer.stream(stream_data["chunk"])
                             # Use the potentially modified full text for downstream processing
                             await self.handle_response_stream(stream_data["full"])
 
