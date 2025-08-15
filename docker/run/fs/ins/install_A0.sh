@@ -40,5 +40,8 @@ uv pip install -r /git/agent-zero/requirements.txt
 # install playwright
 bash /ins/install_playwright.sh "$@"
 
+# install tigervnc
+bash /ins/install_tigervnc.sh "$@"
+
 # Preload A0
 python /git/agent-zero/preload.py --dockerized=true
