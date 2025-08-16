@@ -9,9 +9,14 @@
 # Several common settings are shown below. Uncomment and modify to your
 # liking.
 
-session=gnome
-securitytypes=vncauth,tlsvnc
-geometry=2000x1200
-localhost
-alwaysshared
-vncPasswdFile=/etc/tigervnc/passd
+$session="xfce4-session";
+$securitytypes=vncauth,tlsvnc;
+$geometry="1920x1200";
+$localhost="no";#
+$alwaysshared;
+$vncPasswdFile="/etc/tigervnc/passd";
+$fg;
+$rfbport="5901";
+$rfbauth="/etc/tigervnc/passwd";
+$SecurityTypes=VncAuth;
+$desktop="xfce4";

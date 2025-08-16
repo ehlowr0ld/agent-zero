@@ -4,8 +4,18 @@ FROM agent0ai/agent-zero-base:latest
 
 # Check if the argument is provided, else throw an error
 ARG BRANCH
+ARG KALI_DESKTOP="xfce"
+ARG VNC_USER="agent-zero"
+ARG VNC_PASS="agent0"
+
 RUN if [ -z "$BRANCH" ]; then echo "ERROR: BRANCH is not set!" >&2; exit 1; fi
+
 ENV BRANCH=$BRANCH
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DISPLAY=":1"
+ENV KALI_DESKTOP=${KALI_DESKTOP:-${KALI_DESKTOP}}
+ENV VNC_USER=${VNC_USER:-${VNC_USER}}
+ENV VNC_PASS=${VNC_PASS:-${VNC_PASS}}
 
 # Copy filesystem files to root
 COPY ./fs/ /
@@ -28,8 +38,14 @@ RUN bash /ins/post_install.sh $BRANCH
 
 # Expose ports
 EXPOSE 22 80 9000-9009
+# VNC
+EXPOSE 5900/tcp 6080/tcp 5901/tcp 6081/tcp
 
-RUN chmod +x /exe/initialize.sh /exe/run_A0.sh /exe/run_vnc.sh /exe/run_searxng.sh /exe/run_tunnel_api.sh
+RUN chmod +x /exe/*.sh
 
 # initialize runtime and switch to supervisord
 CMD ["/exe/initialize.sh", "$BRANCH"]
+
+# # RUN them once to make sure everything is right when start
+# RUN /exe/run_xvfb.sh
+# RUN /exe/run_vnc.sh

@@ -3,31 +3,15 @@
 # Wait until run_tunnel.py exists
 echo "Starting VNC..."
 
-if getent passwd agent-zero > /dev/null; then
-    echo "Agent-zero user not found, creating..."
-    useradd -m -s /bin/bash agent-zero
-    echo "agent-zero:agent0" | chpasswd
-    echo "agent-zero ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-fi
-
-if [ ! -f /etc/tigervnc/vncserver.users ] || [ ! grep -q "agent-zero" /etc/tigervnc/vncserver.users ]; then
-    echo "Creating VNC server users file..."
-    echo ":1=agent-zero" > /etc/tigervnc/vncserver.users
-fi
-
-if [ ! -f /etc/tigervnc/passd ]; then
-    echo "Passwd file missing, can't start VNC server..."
-    exit 1
-fi
-
-chown -R agent-zero:agent-zero /etc/tigervnc
-chmod 0400 /etc/tigervnc/vncserver.users
-# agent0 pass
-chmod 0400 /etc/tigervnc/passd
-
-rm -f /tmp/.X11-unix/X1
+rm -f /tmp/.X*-lock /tmp/.X11-unix/X*
 mkdir -p /run/vncserver
-chown agent-zero:agent-zero /run/vncserver
+chown $VNC_USER:$VNC_USER /run/vncserver
 
+# exec /usr/bin/tigervncserver :1 -rfbport 5901 -rfbauth /etc/tigervnc/passwd -fg
+# exec /usr/bin/x11vnc -forever -rfbport 5901 -rfbauth /root/passwd -fg
+# exec x11vnc -display :0 -randr 1920x1080 -auth guess -forever -loop -noxdamage -repeat -rfbauth /etc/x11vnc.passwd -rfbport 5901 -shared
 
-exec /usr/libexec/tigervncsession-start :1
+# exec /usr/bin/vncserver $DISPLAY -fg −UseBlacklist "no"
+# exec x11vnc -display "$DISPLAY" -geometry 1920x1080 -xkb -forever -shared -repeat -listen 0.0.0.0 -nopw -reopen -rfbport 5901 -rfbauth /etc/tigervnc/passwd -fg
+export USER=$VNC_USER
+exec Xtightvncs $DISPLAY -name xfce4 -rfbport 5901 -SecurityTypes=none -rfbauth /root/.vnc/passwd -geometry 1920x1080 -depth 24 -interface 0.0.0.0 -alwaysshared

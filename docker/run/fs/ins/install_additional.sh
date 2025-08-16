@@ -6,3 +6,6 @@ set -e
 
 # searxng - moved to base image
 # bash /ins/install_searxng.sh "$@"
+
+# These are a must ;)
+apt install vim iputils-ping
