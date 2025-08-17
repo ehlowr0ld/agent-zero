@@ -6,3 +6,5 @@ set -e
 
 # searxng - moved to base image
 # bash /ins/install_searxng.sh "$@"
+
+apt-get install -y vim psmisc
