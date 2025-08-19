@@ -1,0 +1,11 @@
+icon 0: {'type': 'text', 'bbox': [0.0, 0.0, 0.0572916679084301, 0.025925925001502037], 'interactivity': False, 'content': ' Applications :', 'source': 'box_ocr_content_ocr'}
+icon 1: {'type': 'icon', 'bbox': [0.0038082837127149105, 0.025409793481230736, 0.06452322006225586, 0.12717387080192566], 'interactivity': True, 'content': 'Home ', 'source': 'box_yolo_content_ocr'}
+icon 2: {'type': 'icon', 'bbox': [0.013402014970779419, 0.12694266438484192, 0.056597135961055756, 0.2251528948545456], 'interactivity': True, 'content': 'File System ', 'source': 'box_yolo_content_ocr'}
+icon 3: {'type': 'icon', 'bbox': [0.9221998453140259, 0.0, 0.9998990893363953, 0.024838900193572044], 'interactivity': True, 'content': ' 2025-08-17 root ', 'source': 'box_yolo_content_ocr'}
+icon 4: {'type': 'icon', 'bbox': [0.007133372128009796, 0.2216777801513672, 0.049297675490379333, 0.3052075505256653], 'interactivity': True, 'content': 'Trash ', 'source': 'box_yolo_content_ocr'}
+icon 5: {'type': 'icon', 'bbox': [0.5258173942565918, 0.9543287754058838, 0.5501617193222046, 0.9982559680938721], 'interactivity': True, 'content': 'Find', 'source': 'box_yolo_content_yolo'}
+icon 6: {'type': 'icon', 'bbox': [0.47622328996658325, 0.9556679129600525, 0.498160183429718, 0.9978524446487427], 'interactivity': True, 'content': 'Drawer', 'source': 'box_yolo_content_yolo'}
+icon 7: {'type': 'icon', 'bbox': [0.49904966354370117, 0.9554644823074341, 0.5254586935043335, 0.9981948137283325], 'interactivity': True, 'content': 'the Globe or Windows Security application.', 'source': 'box_yolo_content_yolo'}
+icon 8: {'type': 'icon', 'bbox': [0.44924747943878174, 0.9546633958816528, 0.47564956545829773, 0.9981085658073425], 'interactivity': True, 'content': 'Toggle Terminal', 'source': 'box_yolo_content_yolo'}
+icon 9: {'type': 'icon', 'bbox': [0.5523764491081238, 0.9538933634757996, 0.5797448754310608, 0.9986212849617004], 'interactivity': True, 'content': 'the folder in the file management application.', 'source': 'box_yolo_content_yolo'}
+icon 10: {'type': 'icon', 'bbox': [0.4190541207790375, 0.9545868039131165, 0.44594794511795044, 0.9992539882659912], 'interactivity': True, 'content': 'a loading or buffering indicator.', 'source': 'box_yolo_content_yolo'}
