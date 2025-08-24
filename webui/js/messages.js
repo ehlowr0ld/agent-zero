@@ -91,6 +91,8 @@ export function getHandler(type) {
       return drawMessageCodeExe;
     case "browser":
       return drawMessageBrowser;
+    case "vnc":
+      return drawMessageVnc;
     case "warning":
       return drawMessageWarning;
     case "rate_limit":
@@ -543,6 +545,30 @@ export function drawMessageBrowser(
     temp,
     true,
     "message-browser",
+    kvps,
+    ["message-ai"],
+    ["msg-json"],
+    false,
+    false
+  );
+}
+
+export function drawMessageVnc(
+  messageContainer,
+  id,
+  type,
+  heading,
+  content,
+  temp,
+  kvps = null
+) {
+  _drawMessage(
+    messageContainer,
+    heading,
+    content,
+    temp,
+    true,
+    "message-vnc",
     kvps,
     ["message-ai"],
     ["msg-json"],

@@ -9,11 +9,10 @@ from python.helpers import runtime
 
 def get_abs_path(*relative_paths):
     """Convert relative paths to absolute paths based on the base directory."""
-    if not relative_paths:
-        return os.path.abspath(os.path.dirname(__file__) + "/../..")
-
-    base_dir = os.path.abspath(os.path.dirname(__file__) + "/../..")
-    return os.path.join(base_dir, *relative_paths)
+    # Use RFC routing to get the correct absolute path in the container
+    return runtime.call_development_function_sync(
+        _get_abs_path_impl, *relative_paths
+    )
 
 
 # =====================================================
@@ -620,3 +619,13 @@ def _write_file_from_base64_impl(file_path: str, content: str) -> bool:
         return True
     except Exception as e:
         raise Exception(f"Failed to write file {file_path}: {str(e)}")
+
+
+def _get_abs_path_impl(*relative_paths) -> str:
+    """
+    Implementation function to get absolute path in the container.
+    """
+    if not relative_paths:
+        return "/a0"
+
+    return os.path.join("/a0", *relative_paths)

@@ -5,6 +5,8 @@ import { sleep } from "/js/sleep.js";
 import { store as attachmentsStore } from "/components/chat/attachments/attachmentsStore.js";
 import { store as speechStore } from "/components/chat/speech/speech-store.js";
 import { store as notificationStore } from "/components/notifications/notification-store.js";
+import { store as vncStore } from "/components/vnc/vncStore.js";
+import vncMessageIntegration from "/components/vnc/vnc-message-integration.js";
 
 globalThis.fetchApi = api.fetchApi; // TODO - backward compatibility for non-modular scripts, remove once refactored to alpine
 
@@ -387,6 +389,11 @@ async function poll() {
 
     // Update notifications from response
     notificationStore.updateFromPoll(response);
+
+    // Update VNC data from response
+    if (response.vnc && vncStore) {
+      vncStore.updateFromPollData(response.vnc);
+    }
 
     //set ui model vars from backend
     if (globalThis.Alpine && inputSection) {
@@ -999,7 +1006,7 @@ function justToast(text, type = "info", timeout = 5000, group = "") {
     group
   )
 }
-  
+
 
 function toast(text, type = "info", timeout = 5000) {
   // Convert timeout from milliseconds to seconds for new notification system

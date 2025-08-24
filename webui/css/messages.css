@@ -132,6 +132,7 @@
 .message-tool,
 .message-code-exe,
 .message-browser,
+.message-vnc,
 .message-info,
 .message-util,
 .message-warning,
@@ -187,6 +188,10 @@
 
 .message-browser {
   background-color: #4b3a69;
+}
+
+.message-vnc {
+  background-color: #1f4747; /* Dark teal for VNC */
 }
 
 .message-info {
@@ -451,6 +456,11 @@
 .light-mode .message-browser {
   background-color: var(--color-panel);
   color: #6c43b0;
+}
+
+.light-mode .message-vnc {
+  background-color: var(--color-panel);
+  color: #2d7373; /* Dark teal for light mode */
 }
 
 .light-mode .message-info {

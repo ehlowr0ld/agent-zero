@@ -716,8 +716,20 @@ class Agent:
             await asyncio.sleep(0.1)
 
     async def process_tools(self, msg: str):
+        # Check for empty or whitespace-only messages first
+        if not msg or not msg.strip():
+            empty_response_msg = self.parse_prompt("agent.system.empty_response.md")
+            self.hist_add_ai_response(empty_response_msg)
+            return empty_response_msg
+
         # search for tool usage requests in agent message
         tool_request = extract_tools.json_parse_dirty(msg)
+
+        # Check if the message appears to attempt a tool call but failed to parse
+        if tool_request is None and ("{" in msg or "tool_name" in msg.lower()):
+            empty_response_msg = self.parse_prompt("agent.system.empty_response.md")
+            self.hist_add_ai_response(empty_response_msg)
+            return empty_response_msg
 
         if tool_request is not None:
             raw_tool_name = tool_request.get("tool_name", "")  # Get the raw tool name
@@ -772,7 +784,7 @@ class Agent:
 
                 # Allow extensions to postprocess tool response
                 await self.call_extensions("tool_execute_after", response=response, tool_name=tool_name)
-                
+
                 await tool.after_execution(response)
                 await self.handle_intervention()
 

@@ -1,0 +1,909 @@
+<style>
+/* ===== VNC Desktop Control Interface Styles ===== */
+
+/* Main VNC Interface Container */
+.vnc-interface {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* === VNC Session Header === */
+.vnc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.vnc-session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vnc-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vnc-status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulse 2s infinite;
+}
+
+.vnc-status-dot.active {
+  background: #10b981;
+}
+
+.vnc-status-dot.inactive {
+  background: #ef4444;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.vnc-status-text {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.vnc-session-details {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.vnc-session-id, .vnc-session-duration {
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* VNC Controls */
+.vnc-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.vnc-control-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vnc-control-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.vnc-control-btn.active {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: #22c55e;
+}
+
+.vnc-dual-context-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.vnc-end-session-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+}
+
+.vnc-end-session-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* === Task Description === */
+.vnc-task-description {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  border-left: 4px solid #22c55e;
+}
+
+/* === VNC Screenshot Container === */
+.vnc-screenshot-container {
+  margin-bottom: 16px;
+}
+
+.vnc-screenshot-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.vnc-screenshot-mini {
+  position: relative;
+  max-width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.vnc-screenshot-mini:hover {
+  transform: scale(1.02);
+}
+
+.vnc-screenshot-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 300px;
+  object-fit: contain;
+}
+
+.vnc-screenshot-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  font-size: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.vnc-screenshot-mini:hover .vnc-screenshot-overlay {
+  opacity: 1;
+}
+
+.vnc-screenshot-info {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  backdrop-filter: blur(4px);
+}
+
+.vnc-update-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.vnc-update-dot {
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+/* === VNC Action Log === */
+.vnc-action-log-container {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vnc-action-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vnc-action-log-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.vnc-action-log-summary {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-left: 8px;
+}
+
+.vnc-action-log-toggle {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.vnc-action-log-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.vnc-action-log-content {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.vnc-action-log-items {
+  padding: 8px;
+}
+
+.vnc-action-log-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  opacity: 0.6;
+  font-size: 14px;
+}
+
+/* === Intent Items === */
+.vnc-action-log-item {
+  margin-bottom: 12px;
+}
+
+.vnc-intent-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  border-left: 4px solid #3b82f6;
+}
+
+.vnc-intent-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.vnc-intent-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.vnc-intent-icon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 24px;
+}
+
+.vnc-intent-type-icon {
+  font-size: 16px;
+}
+
+.vnc-intent-content {
+  flex: 1;
+}
+
+.vnc-intent-text {
+  font-weight: 500;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.vnc-intent-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.vnc-intent-status.completed {
+  color: #22c55e;
+}
+
+.vnc-intent-status.active {
+  color: #f59e0b;
+}
+
+.vnc-intent-reasoning {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  border-left: 3px solid rgba(59, 130, 246, 0.5);
+}
+
+/* === Action Items === */
+.vnc-action-items {
+  margin-top: 8px;
+  padding-left: 36px;
+}
+
+.vnc-action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.vnc-action-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Action Type Specific Styling */
+.vnc-action-intervention {
+  border-left: 3px solid #f472b6;
+}
+
+.vnc-action-agent_response {
+  border-left: 3px solid #34d399;
+}
+
+.vnc-action-agent_reasoning {
+  border-left: 3px solid #fbbf24;
+}
+
+.vnc-action-tool_result {
+  border-left: 3px solid #60a5fa;
+}
+
+.vnc-action-action {
+  border-left: 3px solid #a78bfa;
+}
+
+.vnc-action-icon {
+  min-width: 20px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.vnc-action-content {
+  flex: 1;
+}
+
+.vnc-action-text {
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.vnc-action-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  opacity: 0.6;
+  font-size: 10px;
+}
+
+.vnc-action-status.error {
+  color: #ef4444;
+}
+
+.vnc-action-status.success {
+  color: #22c55e;
+}
+
+/* === Screenshot Modal === */
+.vnc-screenshot-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.vnc-screenshot-modal-content {
+  background: #1f2937;
+  border-radius: 12px;
+  max-width: 95vw;
+  max-height: 95vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.vnc-screenshot-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #374151;
+  border-bottom: 1px solid #4b5563;
+  gap: 16px;
+}
+
+.vnc-screenshot-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-weight: 600;
+}
+
+.vnc-screenshot-view-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.vnc-view-tab {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.vnc-view-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.vnc-view-tab.active {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.vnc-screenshot-modal-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vnc-screenshot-modal-controls button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.vnc-screenshot-modal-controls button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.vnc-zoom-level {
+  color: #d1d5db;
+  font-size: 12px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.vnc-screenshot-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+  gap: 16px;
+}
+
+.vnc-screenshot-modal-img {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+  transform-origin: center;
+}
+
+.vnc-view-info {
+  display: flex;
+  justify-content: center;
+}
+
+.vnc-view-description {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+  font-size: 14px;
+  background: #374151;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+}
+
+.vnc-view-description .material-symbols-outlined {
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+  .vnc-interface {
+    padding: 12px;
+    margin: 12px 0;
+  }
+
+  .vnc-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .vnc-controls {
+    justify-content: center;
+  }
+
+  .vnc-control-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .vnc-session-details {
+    justify-content: center;
+  }
+
+  .vnc-action-items {
+    padding-left: 20px;
+  }
+
+  .vnc-screenshot-modal-content {
+    margin: 10px;
+    max-width: calc(100% - 20px);
+    max-height: calc(100% - 20px);
+  }
+}
+
+/* === Scrollbar Styling === */
+.vnc-action-log-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vnc-action-log-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.vnc-action-log-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.vnc-action-log-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* === Animation Classes === */
+.vnc-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.vnc-slide-down {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 200px; }
+}
+
+/* === Accessibility === */
+.vnc-control-btn:focus,
+.vnc-action-log-toggle:focus,
+.vnc-screenshot-modal-controls button:focus {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+.vnc-intent-item:focus {
+  outline: 2px solid #60a5fa;
+  outline-offset: 1px;
+}
+
+/* === Dark Mode Compatibility === */
+@media (prefers-color-scheme: dark) {
+  .vnc-interface {
+    /* Already optimized for dark mode */
+  }
+}
+</style>
+
+<!-- VNC Desktop Control Interface -->
+<div x-data="{
+  vnc: $store.vnc,
+  mounted: false
+}"
+x-init="
+  vnc.init();
+  mounted = true;
+"
+x-show="vnc.isActive"
+class="vnc-interface"
+id="vnc-interface">
+
+  <!-- VNC Session Header -->
+  <div class="vnc-header">
+    <div class="vnc-session-info">
+      <div class="vnc-status-indicator">
+        <div class="vnc-status-dot" :class="vnc.isActive ? 'active' : 'inactive'"></div>
+        <span class="vnc-status-text" x-text="vnc.isActive ? 'VNC Session Active' : 'VNC Session Inactive'"></span>
+      </div>
+
+      <div class="vnc-session-details">
+        <span class="vnc-session-id">ID: <span x-text="vnc.sessionId ? vnc.sessionId.substring(0, 8) : 'N/A'"></span></span>
+        <span class="vnc-session-duration">Duration: <span x-text="vnc.getSessionDuration()"></span></span>
+      </div>
+    </div>
+
+    <div class="vnc-controls">
+      <button
+        type="button"
+        class="vnc-control-btn vnc-dual-context-btn"
+        @click="vnc.toggleDualContextMode()"
+        :class="{ 'active': vnc.dualContextMode }"
+        title="Toggle dual context mode">
+        <span class="material-symbols-outlined">swap_horiz</span>
+        <span class="vnc-btn-text">Dual Mode</span>
+      </button>
+
+      <button
+        type="button"
+        class="vnc-control-btn vnc-end-session-btn"
+        @click="vnc.endSession()"
+        title="End VNC session">
+        <span class="material-symbols-outlined">stop</span>
+        <span class="vnc-btn-text">End Session</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Task Description -->
+  <div class="vnc-task-description" x-show="vnc.taskDescription">
+    <strong>Task:</strong> <span x-text="vnc.taskDescription"></span>
+  </div>
+
+  <!-- VNC Desktop Screenshot -->
+  <div class="vnc-screenshot-container">
+    <div class="vnc-screenshot-wrapper">
+      <!-- Miniature Screenshot (always visible) -->
+      <div class="vnc-screenshot-mini" @click="vnc.openScreenshotModal()">
+        <img
+          :src="vnc.annotatedScreenshot"
+          :alt="'VNC Screenshot - ' + vnc.taskDescription"
+          class="vnc-screenshot-img"
+          loading="lazy"
+          x-show="vnc.annotatedScreenshot"
+        />
+
+        <div class="vnc-screenshot-overlay">
+          <span class="material-symbols-outlined">zoom_in</span>
+          <span class="vnc-screenshot-text">Click to enlarge</span>
+        </div>
+
+        <div class="vnc-screenshot-info">
+          <span class="vnc-screenshot-dimensions" x-text="vnc.screenDimensions.width + 'x' + vnc.screenDimensions.height"></span>
+          <span class="vnc-screenshot-updated" x-show="vnc.lastScreenshotUpdate">
+            Updated: <span x-text="vnc.lastScreenshotUpdate ? new Date(vnc.lastScreenshotUpdate).toLocaleTimeString() : ''"></span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screenshot Update Indicator -->
+    <div class="vnc-update-indicator" x-show="vnc.pollingActive">
+      <div class="vnc-update-dot"></div>
+      <span>Live updates</span>
+    </div>
+  </div>
+
+  <!-- VNC Action Log -->
+  <div class="vnc-action-log-container">
+    <div class="vnc-action-log-header">
+      <div class="vnc-action-log-title">
+        <span class="material-symbols-outlined">list_alt</span>
+        <span>Action Log</span>
+        <span class="vnc-action-log-summary" x-text="'(' + vnc.getActionLogSummary().intentCount + ' intents, ' + vnc.getActionLogSummary().actionCount + ' actions)'"></span>
+      </div>
+
+      <div class="vnc-action-log-controls">
+        <button
+          type="button"
+          class="vnc-action-log-toggle"
+          @click="vnc.isActionLogExpanded = !vnc.isActionLogExpanded"
+          :class="{ 'expanded': vnc.isActionLogExpanded }">
+          <span class="material-symbols-outlined" x-text="vnc.isActionLogExpanded ? 'expand_less' : 'expand_more'"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Action Log Content -->
+    <div class="vnc-action-log-content" x-show="vnc.isActionLogExpanded">
+      <div class="vnc-action-log-items" x-show="vnc.actionLog.length > 0">
+        <template x-for="(intent, intentIndex) in vnc.actionLog" :key="intentIndex">
+          <div class="vnc-action-log-item">
+            <!-- Intent Declaration -->
+            <div class="vnc-intent-item" @click="vnc.toggleIntentExpansion(intentIndex)">
+              <div class="vnc-intent-header">
+                <div class="vnc-intent-icon">
+                  <span class="material-symbols-outlined">
+                    <span x-text="vnc.isIntentExpanded(intentIndex) ? 'expand_less' : 'expand_more'"></span>
+                  </span>
+                  <span class="vnc-intent-type-icon">🎯</span>
+                </div>
+
+                <div class="vnc-intent-content">
+                  <div class="vnc-intent-text" x-text="intent.intent"></div>
+                  <div class="vnc-intent-meta">
+                    <span class="vnc-intent-time" x-text="new Date(intent.timestamp).toLocaleTimeString()"></span>
+                    <span class="vnc-intent-status" :class="intent.completed ? 'completed' : 'active'" x-text="intent.completed ? 'Completed' : 'In Progress'"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Intent Reasoning (expandable) -->
+              <div class="vnc-intent-reasoning" x-show="vnc.isIntentExpanded(intentIndex)" x-text="intent.reasoning"></div>
+            </div>
+
+            <!-- Intent Actions (expandable) -->
+            <div class="vnc-action-items" x-show="vnc.isIntentExpanded(intentIndex) && intent.actions && intent.actions.length > 0">
+              <template x-for="(action, actionIndex) in intent.actions" :key="actionIndex">
+                <div class="vnc-action-item" :class="'vnc-action-' + action.type">
+                  <div class="vnc-action-icon">
+                    <span x-text="
+                      action.type === 'intervention' ? '💬' :
+                      action.type === 'agent_response' ? '🤖' :
+                      action.type === 'agent_reasoning' ? '💭' :
+                      action.type === 'tool_result' ? '🔧' :
+                      action.action_type === 'click' ? '👆' :
+                      action.action_type === 'type_text' ? '⌨️' :
+                      action.action_type === 'move_mouse' ? '🖱️' :
+                      action.action_type === 'scroll' ? '🔄' :
+                      action.action_type === 'drag' ? '↔️' :
+                      '⚡'
+                    "></span>
+                  </div>
+
+                  <div class="vnc-action-content">
+                    <div class="vnc-action-text">
+                      <span x-show="action.display_text" x-text="action.display_text"></span>
+                      <span x-show="!action.display_text && action.action_type" x-text="action.action_type + (action.coordinates ? ' at ' + JSON.stringify(action.coordinates) : '')"></span>
+                    </div>
+                    <div class="vnc-action-meta">
+                      <span class="vnc-action-time" x-text="new Date(action.timestamp).toLocaleTimeString()"></span>
+                      <span class="vnc-action-status" :class="action.success === false ? 'error' : 'success'">
+                        <span x-show="action.success !== false" class="material-symbols-outlined">check_circle</span>
+                        <span x-show="action.success === false" class="material-symbols-outlined">error</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Empty State -->
+      <div class="vnc-action-log-empty" x-show="vnc.actionLog.length === 0">
+        <span class="material-symbols-outlined">pending_actions</span>
+        <span>No actions recorded yet</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screenshot Modal -->
+  <div class="vnc-screenshot-modal" x-show="vnc.isScreenshotModalOpen" @click.self="vnc.closeScreenshotModal()">
+    <div class="vnc-screenshot-modal-content">
+      <div class="vnc-screenshot-modal-header">
+        <div class="vnc-screenshot-modal-title">
+          <span class="material-symbols-outlined">desktop_windows</span>
+          <span>VNC Desktop Screenshot</span>
+        </div>
+
+        <div class="vnc-screenshot-view-tabs">
+          <button type="button" 
+                  @click="vnc.modalViewMode = 'annotated'" 
+                  :class="{ 'active': vnc.modalViewMode === 'annotated' }"
+                  class="vnc-view-tab"
+                  title="Show annotated view with interactive elements">
+            <span class="material-symbols-outlined">visibility</span>
+            <span>Annotated</span>
+          </button>
+          <button type="button" 
+                  @click="vnc.modalViewMode = 'plain'" 
+                  :class="{ 'active': vnc.modalViewMode === 'plain' }"
+                  class="vnc-view-tab"
+                  title="Show plain desktop without annotations">
+            <span class="material-symbols-outlined">desktop_windows</span>
+            <span>Plain</span>
+          </button>
+        </div>
+
+        <div class="vnc-screenshot-modal-controls">
+          <button type="button" @click="vnc.zoomScreenshot(-0.25)" title="Zoom out">
+            <span class="material-symbols-outlined">zoom_out</span>
+          </button>
+          <span class="vnc-zoom-level" x-text="Math.round(vnc.screenshotZoomLevel * 100) + '%'"></span>
+          <button type="button" @click="vnc.zoomScreenshot(0.25)" title="Zoom in">
+            <span class="material-symbols-outlined">zoom_in</span>
+          </button>
+          <button type="button" @click="vnc.closeScreenshotModal()" title="Close">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="vnc-screenshot-modal-body">
+        <img
+          :src="vnc.modalViewMode === 'annotated' ? vnc.annotatedScreenshot : vnc.currentScreenshot"
+          :alt="'VNC Screenshot (' + vnc.modalViewMode + ') - ' + vnc.taskDescription"
+          class="vnc-screenshot-modal-img"
+          :style="{ transform: 'scale(' + vnc.screenshotZoomLevel + ')' }"
+        />
+        <div class="vnc-view-info">
+          <span x-show="vnc.modalViewMode === 'annotated'" class="vnc-view-description">
+            <span class="material-symbols-outlined">info</span>
+            Showing interactive elements and annotations
+          </span>
+          <span x-show="vnc.modalViewMode === 'plain'" class="vnc-view-description">
+            <span class="material-symbols-outlined">info</span>
+            Showing raw desktop without annotations
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

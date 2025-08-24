@@ -5,6 +5,7 @@ from agent import AgentContext, AgentContextType
 from python.helpers.task_scheduler import TaskScheduler
 from python.helpers.localization import Localization
 from python.helpers.dotenv import get_dotenv_value
+from python.helpers.extension import call_extensions
 
 
 class Poll(ApiHandler):
@@ -101,7 +102,7 @@ class Poll(ApiHandler):
         tasks.sort(key=lambda x: x["created_at"], reverse=True)
 
         # data from this server
-        return {
+        response_data = {
             "context": context.id,
             "contexts": ctxs,
             "tasks": tasks,
@@ -115,3 +116,8 @@ class Poll(ApiHandler):
             "notifications_guid": notification_manager.guid,
             "notifications_version": len(notification_manager.updates),
         }
+
+        # Allow extensions to add custom data to poll response
+        await call_extensions("poll_response_data", context=context, response_data=response_data)
+
+        return response_data

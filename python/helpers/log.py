@@ -24,6 +24,7 @@ Type = Literal[
     "input",
     "user",
     "util",
+    "vnc",
     "warning",
 ]
 

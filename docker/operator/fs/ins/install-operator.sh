@@ -50,12 +50,29 @@ startretries=3
 stopasgroup=true
 stopsignal=QUIT
 killasgroup=true
+
+# syslog
+[program:syslog]
+command=/sbin/syslogd -n
+environment=
+user=root
+stopwaitsecs=60
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+autorestart=true
+startretries=3
+stopasgroup=true
+stopsignal=QUIT
+killasgroup=true
 EOF
 
 mkdir -p /root/packages
 cd /root/packages
 
 apt update
+DEBIAN_FRONTEND=noninteractive \
 apt install -y ca-certificates
 
 echo "deb [arch=i386,amd64,armel,armhf,arm64] https://kali.download/kali kali-bleeding-edge main contrib non-free" > /etc/apt/sources.list.d/kali-bleeding-edge.list
@@ -65,6 +82,7 @@ echo "deb [arch=i386,amd64,armel,armhf,arm64] https://kali.download/kali kali-ex
 
 apt update
 
+DEBIAN_FRONTEND=noninteractive \
 apt install -y libexpat1 python3-pip-whl python3-setuptools-whl media-types \
 mime-support media-types libx11-6 libjs-mathjax libgdbm6t64 libncursesw6 libreadline8t64 \
 libexpat1-dev zlib1g-dev netbase net-tools libfontconfig1 libxft2 libxss1 libgdbm6t64 python3
@@ -89,11 +107,14 @@ apt download python3-minimal
 
 fi
 
+DEBIAN_FRONTEND=noninteractive \
 dpkg --force-all -i  libpython3.13-minimal* python3-minimal* python3.13-minimal*  python3-* python3.13-tk* libtcl8.6* libtk8.6* tk8.6-blt2.5* blt* python3-tk*
 
 
+DEBIAN_FRONTEND=noninteractive \
 dpkg --force-all -i *
 
+DEBIAN_FRONTEND=noninteractive \
 dpkg --configure -a
 
 apt-get update && \
@@ -150,14 +171,13 @@ apt-get -y install \
     kali-desktop-mate \
     kali-desktop-xfce \
     kali-grant-root \
-    kali-linux-headless \
+    kali-linux-core \
     kali-menu \
     kali-system-gui \
     kali-themes-common \
     kali-tools-top10 \
     kali-defaults-desktop \
     kali-grant-root \
-    kali-linux-headless \
     software-properties-common \
     kali-archive-keyring \
     kali-menu \
@@ -170,7 +190,8 @@ apt-get -y install \
     libx11-dev libxau-dev libxcb1-dev libxdmcp-dev  libxext-dev libxfixes-dev libxi-dev \
     libxinerama-dev libxkbcommon-dev libxtst-dev --no-install-recommends \
     gimp imagemagick shutter gnome-screenshot thunar-media-tags-plugin \
-    openssh-client tzsh git curl wget nodejs npm htop glances vim tmux copyq libreoffice && \
+    openssh-client git curl wget nodejs npm htop glances vim tmux copyq libreoffice \
+    busybox-syslogd && \
 apt-get clean && \
 rm -rf /var/lib/apt/lists/*
 
@@ -197,7 +218,20 @@ make static
 chmod 777 xdotool.static
 mv xdotool.static /usr/local/bin/xdotool
 
+DEBIAN_FRONTEND=noninteractive \
 apt purge -y libpthread-stubs0-dev  libx11-dev  libxau-dev  libxcb1-dev  libxdmcp-dev  libxext-dev  libxfixes-dev  libxi-dev  libxinerama-dev  libxkbcommon-dev  libxtst-dev  x11proto-dev  xorg-sgml-doctools  xtrans-dev
+
+# First, install the package
+DEBIAN_FRONTEND=noninteractive \
+apt install -y golang
+
+# Then add the following to your .bashrc
+echo "export GOROOT=/usr/lib/go" >> ~/.bashrc
+echo "export GOPATH=$HOME/go" >> ~/.bashrc
+echo "export PATH=$GOPATH/bin:$GOROOT/bin:$PATH" >> ~/.bashrc
+
+# for developer agent
+go install github.com/isaacphi/mcp-language-server@latest
 
 mkdir -p /root/.config/xfce4
 touch /root/.config/xfce4/helpers.rc

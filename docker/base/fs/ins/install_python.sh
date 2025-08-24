@@ -47,8 +47,8 @@ source /opt/venv/bin/activate
 pip install --no-cache-dir --upgrade pip ipython requests
 # Install some packages in specific variants
 pip install --no-cache-dir \
-    torch==2.4.0 \
-    torchvision==0.19.0 \
+    torch==2.8.0+cpu \
+    torchvision==0.23.0+cpu \
     --index-url https://download.pytorch.org/whl/cpu
 
 echo "====================PYTHON UV ===================="

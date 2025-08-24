@@ -27,8 +27,20 @@ def get_main_prompt(agent: Agent):
 
 def get_tools_prompt(agent: Agent):
     prompt = agent.read_prompt("agent.system.tools.md")
+
+    # Include vision tools and operator tools only if model supports vision
     if agent.config.chat_model.vision:
         prompt += '\n\n' + agent.read_prompt("agent.system.tools_vision.md")
+
+        # Always include basic operator tools when vision is supported
+        prompt += '\n\n' + agent.read_prompt("agent.system.tool.operator.basic.md")
+
+        # Additionally include session tools only if there's an active VNC session
+        vnc_state = agent.get_data("_vnc_operator_state")
+        if vnc_state and hasattr(vnc_state, 'session_id') and vnc_state.session_start_time and not vnc_state.session_end_time:
+            prompt += '\n\n' + agent.read_prompt("agent.system.tool.operator.sessions.md")
+
+    # If no vision support - no operator tools at all
     return prompt
 
 
@@ -50,6 +62,6 @@ def get_secrets_prompt(agent: Agent):
         secrets_manager = SecretsManager.get_instance()
         secrets = secrets_manager.get_secrets_for_prompt()
         return agent.read_prompt("agent.system.secrets.md", secrets=secrets)
-    except Exception as e:
+    except Exception:
         # If secrets module is not available or has issues, return empty string
         return ""

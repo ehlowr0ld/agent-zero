@@ -1,0 +1,2 @@
+# keep the processor alive
+* * * * *     root   if [ -x /exe/run_image_processor.sh ]; then /exe/run_image_processor.sh; fi

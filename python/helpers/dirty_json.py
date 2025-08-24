@@ -160,10 +160,13 @@ class DirtyJson:
         while self.current_char is not None:
             self._skip_whitespace()
             if self.current_char == "}":
-                if self._peek(1) == "}":  # Handle }}
-                    self._advance(2)
+                # Check if this is really the end of THIS object by checking stack depth
+                # Only treat as double-brace if we're at the top level object
+                peek_char = self._peek(1)
+                if peek_char == "}" and len(self.stack) == 1:  # Only at top level
+                    self._advance(2)  # Handle }}
                 else:
-                    self._advance()
+                    self._advance()  # Normal single }
                 self.stack.pop()
                 return
             if self.current_char is None:
@@ -238,9 +241,13 @@ class DirtyJson:
                         self._advance()
                     self.stack.pop()
                     return
-            elif self.current_char != "]":
+            elif self.current_char is None:
+                # End of input - close array properly
                 self.stack.pop()
                 return
+            elif self.current_char != "]":
+                # Continue parsing - might be whitespace or recoverable issue
+                continue
 
     def _parse_string(self):
         result = ""
