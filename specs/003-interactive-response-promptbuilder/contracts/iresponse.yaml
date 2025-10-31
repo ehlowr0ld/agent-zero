@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: InteractiveResponse API
+  version: 0.1.0
+  description: Submit InteractiveResponse state to render a prompt or dispatch a tool
+paths:
+  /iresponse/submit:
+    post:
+      summary: Submit IR values and execute callback (prompt or tool)
+      operationId: submitInteractiveResponse
+      security:
+        - basicAuth: []
+        - csrfHeader: []
+      parameters:
+        - in: header
+          name: X-Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitRequest'
+      responses:
+        '200':
+          description: Successful submission
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SubmitPosted'
+                  - $ref: '#/components/schemas/SubmitPrefilled'
+                  - $ref: '#/components/schemas/SubmitDispatched'
+        '400':
+          description: Validation or rendering error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Tool not found (tool callback)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    csrfHeader:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+  schemas:
+    InteractiveResponse:
+      type: object
+      required: [elements]
+      properties:
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Element'
+        submit_behavior:
+          type: string
+          enum: [auto, prefill]
+        callback:
+          oneOf:
+            - $ref: '#/components/schemas/PromptCallback'
+            - $ref: '#/components/schemas/ToolCallback'
+    Element:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+        label:
+          type: string
+        value: {}
+        disabled:
+          type: boolean
+        required:
+          type: boolean
+        tooltip:
+          type: string
+        default: {}
+    PromptCallback:
+      type: object
+      required: [kind, template]
+      properties:
+        kind:
+          type: string
+          enum: [prompt]
+        template:
+          type: string
+    ToolCallback:
+      type: object
+      required: [kind, tool_name, args_template]
+      properties:
+        kind:
+          type: string
+          enum: [tool]
+        tool_name:
+          type: string
+        args_template:
+          type: string
+    SubmitRequest:
+      type: object
+      required: [ir, values]
+      properties:
+        ir:
+          $ref: '#/components/schemas/InteractiveResponse'
+        values:
+          type: object
+          additionalProperties: {}
+        submit_action_id:
+          type: string
+    SubmitPosted:
+      type: object
+      required: [status, message_id]
+      properties:
+        status:
+          type: string
+          enum: [posted]
+        message_id:
+          type: string
+    SubmitPrefilled:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [prefilled]
+    SubmitDispatched:
+      type: object
+      required: [status, tool_name]
+      properties:
+        status:
+          type: string
+          enum: [dispatched]
+        tool_name:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [status, error]
+      properties:
+        status:
+          type: string
+          enum: [error]
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum: [invalid_args_json, unknown_tool, validation_error, dispatch_failed]
+            message:
+              type: string
+            details: {}
