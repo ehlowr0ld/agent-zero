@@ -64,7 +64,7 @@ def get_secrets_prompt(agent: Agent):
         secrets = secrets_manager.get_secrets_for_prompt()
         vars = get_settings()["variables"]
         return agent.read_prompt("agent.system.secrets.md", secrets=secrets, vars=vars)
-    except Exception as e:
+    except Exception:
         # If secrets module is not available or has issues, return empty string
         return ""
 
@@ -73,10 +73,11 @@ def get_project_prompt(agent: Agent):
     result = agent.read_prompt("agent.system.projects.main.md")
     project_name = agent.context.get_data(projects.CONTEXT_DATA_KEY_PROJECT)
     if project_name:
+        projects.ensure_context_project_ready(agent.context, source="system_prompt")
         project_vars = projects.build_system_prompt_vars(project_name)
         result += "\n\n" + agent.read_prompt(
             "agent.system.projects.active.md", **project_vars
         )
-    else:
-        result += "\n\n" + agent.read_prompt("agent.system.projects.inactive.md")
+        return result
+    result += "\n\n" + agent.read_prompt("agent.system.projects.inactive.md")
     return result

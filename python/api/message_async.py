@@ -6,6 +6,7 @@ from python.api.message import Message
 class MessageAsync(Message):
     async def respond(self, task: DeferredTask, context: AgentContext):
         return {
+            "ok": True,
             "message": "Message received.",
             "context": context.id,
         }

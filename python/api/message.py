@@ -1,21 +1,43 @@
-from agent import AgentContext, UserMessage
-from python.helpers.api import ApiHandler, Request, Response
-
-from python.helpers import files
 import os
+
 from werkzeug.utils import secure_filename
+
+from agent import AgentContext, UserMessage, HandledException
+from python.helpers import files, projects
+from python.helpers.api import ApiHandler, Request, Response
 from python.helpers.defer import DeferredTask
 from python.helpers.print_style import PrintStyle
 
 
 class Message(ApiHandler):
     async def process(self, input: dict, request: Request) -> dict | Response:
-        task, context = await self.communicate(input=input, request=request)
+        try:
+            task, context = await self.communicate(input=input, request=request)
+        except projects.ProjectNotFoundError as exc:
+            context_id = exc.context_id or input.get("context", "")
+            return {
+                "ok": False,
+                "error": str(exc),
+                "context": context_id,
+                "project_error": True,
+            }
         return await self.respond(task, context)
 
     async def respond(self, task: DeferredTask, context: AgentContext):
-        result = await task.result()  # type: ignore
+        try:
+            result = await task.result()  # type: ignore
+        except HandledException as exc:
+            original = exc.args[0] if exc.args else exc
+            if isinstance(original, projects.ProjectNotFoundError):
+                return {
+                    "ok": False,
+                    "error": str(original),
+                    "context": original.context_id or context.id,
+                    "project_error": True,
+                }
+            raise
         return {
+            "ok": True,
             "message": result,
             "context": context.id,
         }
@@ -30,7 +52,7 @@ class Message(ApiHandler):
             attachment_paths = []
 
             upload_folder_int = "/a0/tmp/uploads"
-            upload_folder_ext = files.get_abs_path("tmp/uploads") # for development environment
+            upload_folder_ext = files.get_abs_path("tmp/uploads")  # for development environment
 
             if attachments:
                 os.makedirs(upload_folder_ext, exist_ok=True)
@@ -43,10 +65,10 @@ class Message(ApiHandler):
                     attachment_paths.append(os.path.join(upload_folder_int, filename))
         else:
             # Handle JSON request as before
-            input_data = request.get_json()
-            text = input_data.get("text", "")
-            ctxid = input_data.get("context", "")
-            message_id = input_data.get("message_id", None)
+            input = input or {}
+            text = input.get("text", "")
+            ctxid = input.get("context", "")
+            message_id = input.get("message_id", None)
             attachment_paths = []
 
         # Now process the message
@@ -68,7 +90,7 @@ class Message(ApiHandler):
         # Print to console and log
         PrintStyle(
             background_color="#6C3483", font_color="white", bold=True, padding=True
-        ).print(f"User message:")
+        ).print("User message:")
         PrintStyle(font_color="white", padding=False).print(f"> {message}")
         if attachment_filenames:
             PrintStyle(font_color="white", padding=False).print("Attachments:")
@@ -83,5 +105,7 @@ class Message(ApiHandler):
             kvps={"attachments": attachment_filenames},
             id=message_id,
         )
+
+        projects.ensure_context_project_ready(context, source="message")
 
         return context.communicate(UserMessage(message, attachment_paths)), context

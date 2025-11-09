@@ -14,6 +14,21 @@ PROJECT_INSTRUCTIONS_DIR = "instructions"
 PROJECT_HEADER_FILE = "project.json"
 
 CONTEXT_DATA_KEY_PROJECT = "project"
+PROJECT_ERROR_FLAG = "_project_error_notified"
+
+
+class ProjectNotFoundError(Exception):
+    def __init__(
+        self,
+        name: str,
+        message: str | None = None,
+        context_id: str | None = None,
+    ):
+        if message is None:
+            message = f"Project '{name}' not found or metadata is invalid"
+        super().__init__(message)
+        self.name = name
+        self.context_id = context_id
 
 
 class BasicProjectData(TypedDict):
@@ -21,8 +36,7 @@ class BasicProjectData(TypedDict):
     description: str
     instructions: str
     color: str
-    memory: Literal["own", "global"] # in the future we can add cutom and point to another existing folder
-
+    memory: Literal["own", "global"]  # in the future we can add cutom and point to another existing folder
 
 
 class EditProjectData(BasicProjectData):
@@ -38,6 +52,7 @@ def get_projects_parent_folder():
 
 def get_project_folder(name: str):
     return files.get_abs_path(get_projects_parent_folder(), name)
+
 
 def get_project_meta_folder(name: str):
     return files.get_abs_path(get_project_folder(name), PROJECT_META_DIR)
@@ -66,7 +81,15 @@ def load_project_header(name: str):
     abs_path = files.get_abs_path(
         PROJECTS_PARENT_DIR, name, PROJECT_META_DIR, PROJECT_HEADER_FILE
     )
-    header: dict = dirty_json.parse(files.read_file(abs_path))  # type: ignore
+    try:
+        raw = files.read_file(abs_path)
+        header: dict = dirty_json.parse(raw)  # type: ignore
+    except FileNotFoundError as exc:
+        raise ProjectNotFoundError(name) from exc
+    except Exception as exc:
+        raise ProjectNotFoundError(
+            name, f"Project '{name}' metadata could not be read: {exc}"
+        ) from exc
     header["name"] = name
     return header
 
@@ -79,6 +102,7 @@ def _normalizeBasicData(data: BasicProjectData):
         color=data.get("color", ""),
         memory=data.get("memory", "own"),
     )
+
 
 def _normalizeEditData(data: EditProjectData):
     return EditProjectData(
@@ -93,12 +117,14 @@ def _normalizeEditData(data: EditProjectData):
         memory=data.get("memory", "own"),
     )
 
+
 def _edit_data_to_basic_data(data: EditProjectData):
-    return _normalizeBasicData(data)
+    return _normalizeBasicData(data)  # type: ignore
+
 
 def _basic_data_to_edit_data(data: BasicProjectData):
-    return _normalizeEditData(data) # type: ignore
-        
+    return _normalizeEditData(data)  # type: ignore
+
 
 def update_project(name: str, data: EditProjectData):
     # merge with current state
@@ -117,28 +143,115 @@ def update_project(name: str, data: EditProjectData):
     reactivate_project_in_chats(name)
     return name
 
+
 def load_basic_project_data(name: str) -> BasicProjectData:
-    data = BasicProjectData(**load_project_header(name))
+    try:
+        data = BasicProjectData(**load_project_header(name))
+    except ProjectNotFoundError:
+        raise
+    except Exception as exc:
+        raise ProjectNotFoundError(
+            name, f"Project '{name}' metadata is invalid: {exc}"
+        ) from exc
     normalized = _normalizeBasicData(data)
     return normalized
 
 
 def load_edit_project_data(name: str) -> EditProjectData:
-    data = load_basic_project_data(name)
-    additional_instructions = get_additional_instructions_files(
-        name
-    )  # for additional info
-    variables = load_project_variables(name)
-    secrets = load_project_secrets_masked(name)
-    data = EditProjectData(
-        **data,
-        name=name,
-        instruction_files_count=len(additional_instructions),
-        variables=variables,
-        secrets=secrets,
-    )
+    try:
+        data = load_basic_project_data(name)
+        additional_instructions = get_additional_instructions_files(
+            name
+        )  # for additional info
+        variables = load_project_variables(name)
+        secrets = load_project_secrets_masked(name)
+        data = EditProjectData(
+            **data,
+            name=name,
+            instruction_files_count=len(additional_instructions),
+            variables=variables,
+            secrets=secrets,
+        )
+    except ProjectNotFoundError:
+        raise
+    except Exception as exc:
+        raise ProjectNotFoundError(
+            name, f"Project '{name}' metadata is invalid: {exc}"
+        ) from exc
     data = _normalizeEditData(data)
     return data
+
+
+def _project_error_group(context_id: str) -> str:
+    return f"project-missing-{context_id}"
+
+
+def has_project_error(context: "AgentContext") -> bool:
+    return bool(context.get_data(PROJECT_ERROR_FLAG))
+
+
+def clear_project_error(context: "AgentContext"):
+    if has_project_error(context):
+        context.data.pop(PROJECT_ERROR_FLAG, None)
+        persist_chat.save_tmp_chat(context)
+
+
+def mark_project_error(
+    context: "AgentContext",
+    project_name: str,
+    message: str,
+    *,
+    source: str | None = None,
+):
+    first_detection = not has_project_error(context)
+    if first_detection:
+        context.set_data(PROJECT_ERROR_FLAG, True)
+    detail = message
+    if source:
+        detail = f"{message}\nSource: {source}"
+    if first_detection:
+        PrintStyle.error(
+            f"Context {context.id}: project '{project_name}' unavailable. {detail}"
+        )
+        context.log.log(
+            type="error",
+            heading="Project unavailable",
+            content=detail,
+            kvps={"project": project_name, "context": context.id},
+        )
+        from python.helpers.notification import (
+            NotificationManager,
+            NotificationPriority,
+            NotificationType,
+        )
+
+        NotificationManager.send_notification(
+            NotificationType.ERROR,
+            NotificationPriority.HIGH,
+            f"Project '{project_name}' is unavailable for context {context.id}.",
+            title="Project unavailable",
+            detail=detail,
+            display_time=60,
+            group=_project_error_group(context.id),
+        )
+    persist_chat.save_tmp_chat(context)
+
+
+def ensure_context_project_ready(
+    context: "AgentContext", source: str | None = None
+):
+    project_name = get_context_project_name(context)
+    if not project_name:
+        clear_project_error(context)
+        return
+    try:
+        load_basic_project_data(project_name)
+        clear_project_error(context)
+    except ProjectNotFoundError as exc:
+        mark_project_error(context, project_name, str(exc), source=source)
+        raise ProjectNotFoundError(
+            project_name, str(exc), context_id=context.id
+        ) from exc
 
 
 def save_project_header(name: str, data: BasicProjectData):
@@ -194,6 +307,7 @@ def activate_project(context_id: str, name: str):
         CONTEXT_DATA_KEY_PROJECT,
         {"name": name, "title": display_name, "color": data.get("color", "")},
     )
+    clear_project_error(context)
 
     # persist
     persist_chat.save_tmp_chat(context)
@@ -207,6 +321,7 @@ def deactivate_project(context_id: str):
         raise Exception("Context not found")
     context.set_data(CONTEXT_DATA_KEY_PROJECT, None)
     context.set_output_data(CONTEXT_DATA_KEY_PROJECT, None)
+    clear_project_error(context)
 
     # persist
     persist_chat.save_tmp_chat(context)
@@ -217,7 +332,15 @@ def reactivate_project_in_chats(name: str):
 
     for context in AgentContext.all():
         if context.get_data(CONTEXT_DATA_KEY_PROJECT) == name:
-            activate_project(context.id, name)
+            try:
+                activate_project(context.id, name)
+            except ProjectNotFoundError as exc:
+                mark_project_error(
+                    context,
+                    name,
+                    str(exc),
+                    source="reactivate_project_in_chats",
+                )
         persist_chat.save_tmp_chat(context)
 
 
@@ -254,8 +377,10 @@ def get_additional_instructions_files(name: str):
     )
     return files.read_text_files_in_dir(instructions_folder)
 
+
 def get_context_project_name(context: "AgentContext") -> str | None:
     return context.get_data(CONTEXT_DATA_KEY_PROJECT)
+
 
 def load_project_variables(name: str):
     try:
@@ -266,21 +391,25 @@ def load_project_variables(name: str):
     except Exception:
         return ""
 
+
 def save_project_variables(name: str, variables: str):
     abs_path = files.get_abs_path(
         get_project_meta_folder(name), "variables.env"
     )
     files.write_file(abs_path, variables)
 
-def load_project_secrets_masked(name:str, merge_with_global=False):
+
+def load_project_secrets_masked(name: str, merge_with_global=False):
     from python.helpers import secrets
     mgr = secrets.get_project_secrets_manager(name, merge_with_global)
     return mgr.get_masked_secrets()
+
 
 def save_project_secrets(name: str, secrets: str):
     from python.helpers.secrets import get_project_secrets_manager
     secrets_manager = get_project_secrets_manager(name)
     secrets_manager.save_secrets_with_merge(secrets)
+
 
 def get_context_memory_subdir(context: "AgentContext") -> str | None:
     # if a project is active and has memory isolation set, return the project memory subdir
@@ -289,4 +418,4 @@ def get_context_memory_subdir(context: "AgentContext") -> str | None:
         project_data = load_basic_project_data(project_name)
         if project_data["memory"] == "own":
             return "projects/" + project_name
-    return None # no memory override
+    return None  # no memory override

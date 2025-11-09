@@ -1,5 +1,7 @@
 from python.helpers.api import ApiHandler, Request, Response
 
+from python.helpers import projects
+
 from agent import AgentContext, AgentContextType
 
 from python.helpers.task_scheduler import TaskScheduler
@@ -18,9 +20,18 @@ class Poll(ApiHandler):
         timezone = input.get("timezone", get_dotenv_value("DEFAULT_USER_TIMEZONE", "UTC"))
         Localization.get().set_timezone(timezone)
 
+        deselect_due_to_project = False
         # context instance - get or create only if ctxid is provided
         if ctxid:
             context = self.use_context(ctxid, create_if_not_exists=False)
+            if context:
+                try:
+                    projects.ensure_context_project_ready(
+                        context, source="poll.selected_context"
+                    )
+                except projects.ProjectNotFoundError:
+                    deselect_due_to_project = True
+                    context = None
         else:
             context = None
 
@@ -55,6 +66,16 @@ class Poll(ApiHandler):
             # Skip BACKGROUND contexts as they should be invisible to users
             if ctx.type == AgentContextType.BACKGROUND:
                 processed_contexts.add(ctx.id)
+                continue
+
+            try:
+                projects.ensure_context_project_ready(ctx, source="poll.contexts")
+            except projects.ProjectNotFoundError:
+                processed_contexts.add(ctx.id)
+                if ctxid == ctx.id:
+                    deselect_due_to_project = True
+                    context = None
+                    logs = []
                 continue
 
             # Create the base context data that will be returned
@@ -106,7 +127,7 @@ class Poll(ApiHandler):
 
         # data from this server
         return {
-            "deselect_chat": ctxid and not context,
+            "deselect_chat": deselect_due_to_project or (ctxid and not context),
             "context": context.id if context else "",
             "contexts": ctxs,
             "tasks": tasks,
