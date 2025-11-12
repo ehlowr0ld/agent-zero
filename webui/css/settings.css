@@ -380,9 +380,9 @@ nav ul li a img {
   margin: 0;
   border-collapse: separate;
   border-spacing: 0;
-  white-space: nowrap;
   padding-bottom: 8px;
   table-layout: auto;
+  white-space: nowrap;
 }
 
 .scheduler-task-list th,
@@ -528,6 +528,7 @@ nav ul li a img {
   box-sizing: border-box;
   display: block;
   padding: 0.5rem 0;
+  overflow-x: auto;
 }
 
 /* Scheduler task actions and buttons */
@@ -579,12 +580,9 @@ nav ul li a img {
 
 /* Mobile styles for scheduler sections */
 @media (max-width: 1280px) {
-  .scheduler-container {
-    min-width: max-content; /* Allow expansion based on content */
-  }
-
+  .scheduler-container,
   .scheduler-task-list {
-    min-width: max-content; /* Expand to fit content if needed */
+    min-width: 100%;
   }
 
   /* Scrollbar styling for mobile view */

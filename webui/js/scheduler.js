@@ -130,6 +130,7 @@ const fullComponentImplementation = function() {
             this.sortDirection = 'asc';
             this.pollingInterval = null;
             this.pollingActive = false;
+            this.ensureProjectsFresh();
 
             // Start polling for tasks
             this.startPolling();
@@ -185,7 +186,8 @@ const fullComponentImplementation = function() {
                 },
                 system_prompt: '',
                 prompt: '',
-                attachments: []
+                attachments: [],
+                project_name: ''
             };
 
             // Initialize Flatpickr for date/time pickers after Alpine is fully initialized
@@ -273,22 +275,21 @@ const fullComponentImplementation = function() {
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to fetch tasks');
+                const payload = await response.json();
+
+                if (!response.ok || !payload || payload.ok === false) {
+                    const message = payload && payload.error ? payload.error : 'Failed to fetch tasks';
+                    throw new Error(message);
                 }
 
-                const data = await response.json();
-
-                // Check if data.tasks exists and is an array
-                if (!data || !data.tasks) {
-                    console.error('Invalid response: data.tasks is missing', data);
-                    this.tasks = [];
-                } else if (!Array.isArray(data.tasks)) {
-                    console.error('Invalid response: data.tasks is not an array', data.tasks);
+                const hasValidArray = Array.isArray(payload?.data);
+                if (!hasValidArray) {
+                    console.error('Invalid response: payload.data is missing or not an array', payload);
                     this.tasks = [];
                 } else {
+                    const taskArray = payload.data;
                     // Verify each task has necessary properties
-                    const validTasks = data.tasks.filter(task => {
+                    const validTasks = taskArray.filter(task => {
                         if (!task || typeof task !== 'object') {
                             console.error('Invalid task (not an object):', task);
                             return false;
@@ -308,8 +309,8 @@ const fullComponentImplementation = function() {
                         return true;
                     });
 
-                    if (validTasks.length !== data.tasks.length) {
-                        console.warn(`Filtered out ${data.tasks.length - validTasks.length} invalid tasks`);
+                    if (validTasks.length !== taskArray.length) {
+                        console.warn(`Filtered out ${taskArray.length - validTasks.length} invalid tasks`);
                     }
 
                     this.tasks = validTasks;
@@ -439,8 +440,123 @@ const fullComponentImplementation = function() {
             }
         },
 
+        async ensureProjectsFresh() {
+            try {
+                if (this.$store?.projects?.loadProjectsList) {
+                    await this.$store.projects.loadProjectsList();
+                }
+            } catch (error) {
+                console.error('Error refreshing projects list for scheduler:', error);
+                showToast('Unable to refresh projects list. Options may be outdated.', 'warning');
+            }
+        },
+
+        getActiveChatProject() {
+            if (chatsStore.selectedContext?.project) {
+                return chatsStore.selectedContext.project;
+            }
+            return this.$store?.chats?.selectedContext?.project || null;
+        },
+
+        normalizeProjectSelection(value) {
+            if (value === undefined || value === null) {
+                return null;
+            }
+            if (typeof value !== 'string') {
+                return null;
+            }
+            const trimmed = value.trim();
+            return trimmed.length ? trimmed : null;
+        },
+
+        getProjectOptions() {
+            const projectsList = this.$store?.projects?.projectList || [];
+            const options = [
+                { value: '', label: '[NONE]', color: null }
+            ];
+            for (const project of projectsList) {
+                options.push({
+                    value: project.name,
+                    label: project.title || project.name,
+                    color: project.color || null
+                });
+            }
+            return options;
+        },
+
+        getProjectMeta(projectName) {
+            const normalized = this.normalizeProjectSelection(projectName);
+            if (!normalized) {
+                return { name: null, label: '[NONE]', color: null };
+            }
+            const projectsList = this.$store?.projects?.projectList || [];
+            const match = projectsList.find((project) => project.name === normalized);
+            if (match) {
+                return {
+                    name: normalized,
+                    label: match.title || match.name,
+                    color: match.color || null
+                };
+            }
+            return { name: normalized, label: normalized, color: null };
+        },
+
+        getProjectLabel(projectName) {
+            return this.getProjectMeta(projectName).label;
+        },
+
+        getProjectColor(projectName) {
+            return this.getProjectMeta(projectName).color;
+        },
+
+        getProjectStyle(projectName) {
+            const color = this.getProjectColor(projectName);
+            if (!color) {
+                return { border: '1px solid var(--color-border)' };
+            }
+            return { backgroundColor: color };
+        },
+
+        hasProject(projectName) {
+            return !!this.normalizeProjectSelection(projectName);
+        },
+
+        getTaskContextTypeLabel(task) {
+            if (!task) {
+                return 'Shared context (uses its chat project)';
+            }
+            return task.dedicated_context
+                ? 'Dedicated context (runs in its own chat)'
+                : 'Shared context (uses its chat project)';
+        },
+
+        contextHint(task) {
+            if (!task || task.dedicated_context) {
+                return '';
+            }
+            return 'Change the chat’s active project to update this task.';
+        },
+
+        isEditingTaskDedicated() {
+            return !!(this.editingTask && this.editingTask.dedicated_context);
+        },
+
+        isProjectSelectorLocked() {
+            if (!this.editingTask) {
+                return false;
+            }
+            return !this.editingTask.dedicated_context;
+        },
+
+        projectSelectorHelpText() {
+            return this.isProjectSelectorLocked()
+                ? 'Shared-context tasks follow their chat project. Switch projects from the chat header.'
+                : 'Choose the project this dedicated task should use.';
+        },
+
         // Create a new task
-        startCreateTask() {
+        async startCreateTask() {
+            await this.ensureProjectsFresh();
             this.isCreating = true;
             this.isEditing = false;
             document.querySelector('[x-data="schedulerSettings"]')?.setAttribute('data-editing-state', 'creating');
@@ -465,7 +581,12 @@ const fullComponentImplementation = function() {
                 system_prompt: '',
                 prompt: '',
                 attachments: [], // Always initialize as an empty array
+                project_name: '',
+                dedicated_context: true
             };
+
+            const activeProject = this.getActiveChatProject();
+            this.editingTask.project_name = activeProject?.name || '';
 
             // Set up Flatpickr after the component is visible
             this.$nextTick(() => {
@@ -481,12 +602,16 @@ const fullComponentImplementation = function() {
                 return;
             }
 
+            await this.ensureProjectsFresh();
+
             this.isCreating = false;
             this.isEditing = true;
             document.querySelector('[x-data="schedulerSettings"]')?.setAttribute('data-editing-state', 'editing');
 
             // Create a deep copy to avoid modifying the original
             this.editingTask = JSON.parse(JSON.stringify(task));
+            this.editingTask.dedicated_context = !!this.editingTask.dedicated_context;
+            this.editingTask.project_name = this.normalizeProjectSelection(this.editingTask.project_name) || '';
 
             // Debug log
             console.log('Task data for editing:', task);
@@ -651,6 +776,7 @@ const fullComponentImplementation = function() {
                 system_prompt: '',
                 prompt: '',
                 attachments: [], // Always initialize as an empty array
+                project_name: ''
             };
             this.isCreating = false;
             this.isEditing = false;
@@ -684,6 +810,9 @@ const fullComponentImplementation = function() {
                         .map(line => typeof line === 'string' ? line.trim() : line)
                         .filter(line => line && line.trim().length > 0)
                     : [];
+
+                const normalizedProjectName = this.normalizeProjectSelection(this.editingTask.project_name);
+                taskData.project_name = normalizedProjectName;
 
                 // Handle task type specific data
                 if (this.editingTask.type === 'scheduled') {
@@ -799,29 +928,28 @@ const fullComponentImplementation = function() {
                     body: JSON.stringify(taskData)
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to save task');
-                }
-
-                // Parse response data to get the created/updated task
                 const responseData = await response.json();
+
+                if (!response.ok || !responseData || responseData.ok === false) {
+                    const message = responseData && responseData.error ? responseData.error : 'Failed to save task';
+                    throw new Error(message);
+                }
 
                 // Show success message
                 showToast(this.isCreating ? 'Task created successfully' : 'Task updated successfully', 'success');
 
                 // Immediately update the UI if the response includes the task
-                if (responseData && responseData.task) {
-                    console.log('Task received in response:', responseData.task);
+                if (responseData && responseData.data) {
+                    console.log('Task received in response:', responseData.data);
 
                     // Update the tasks array
                     if (this.isCreating) {
                         // For new tasks, add to the array
-                        this.tasks = [...this.tasks, responseData.task];
+                        this.tasks = [...this.tasks, responseData.data];
                     } else {
                         // For updated tasks, replace the existing one
                         this.tasks = this.tasks.map(t =>
-                            t.uuid === responseData.task.uuid ? responseData.task : t
+                            t.uuid === responseData.data.uuid ? responseData.data : t
                         );
                     }
 
@@ -892,9 +1020,11 @@ const fullComponentImplementation = function() {
                     })
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to run task');
+                const payload = await response.json();
+
+                if (!response.ok || !payload || payload.ok === false) {
+                    const message = payload && payload.error ? payload.error : 'Failed to run task';
+                    throw new Error(message);
                 }
 
                 showToast('Task started successfully', 'success');
@@ -937,9 +1067,11 @@ const fullComponentImplementation = function() {
                     })
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to reset task state');
+                const payload = await response.json();
+
+                if (!response.ok || !payload || payload.ok === false) {
+                    const message = payload && payload.error ? payload.error : 'Failed to reset task state';
+                    throw new Error(message);
                 }
 
                 showToast('Task state reset to idle', 'success');
@@ -977,9 +1109,11 @@ const fullComponentImplementation = function() {
                     })
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to delete task');
+                const payload = await response.json();
+
+                if (!response.ok || !payload || payload.ok === false) {
+                    const message = payload && payload.error ? payload.error : 'Failed to delete task';
+                    throw new Error(message);
                 }
 
                 showToast('Task deleted successfully', 'success');
@@ -1463,7 +1597,11 @@ if (!window.schedulerSettings) {
                 'changeSort', 'formatDate', 'formatPlan', 'formatSchedule',
                 'getStateBadgeClass', 'generateRandomToken', 'testFiltering',
                 'debugTasks', 'sortTasks', 'initFlatpickr', 'initDateTimeInput',
-                'updateTasksUI'
+                'updateTasksUI', 'ensureProjectsFresh', 'getActiveChatProject',
+                'normalizeProjectSelection', 'getProjectOptions', 'getProjectMeta',
+                'getTaskContextTypeLabel', 'contextHint', 'isEditingTaskDedicated',
+                'projectSelectorHelpText', 'isProjectSelectorLocked',
+                'getProjectStyle', 'getProjectLabel', 'getProjectColor'
             ];
 
             essentialMethods.forEach(method => {

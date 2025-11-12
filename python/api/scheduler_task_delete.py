@@ -3,6 +3,7 @@ from python.helpers.task_scheduler import TaskScheduler, TaskState
 from python.helpers.localization import Localization
 from agent import AgentContext
 from python.helpers import persist_chat
+from python.helpers.print_style import PrintStyle
 
 
 class SchedulerTaskDelete(ApiHandler):
@@ -10,6 +11,10 @@ class SchedulerTaskDelete(ApiHandler):
         """
         Delete a task from the scheduler by ID
         """
+        def error_payload(message: str, technical: object | None = None) -> Output:
+            detail = message if technical is None else f"{message} (Technical: {technical})"
+            return {"ok": False, "error": detail}
+
         # Get timezone from input (do not set if not provided, we then rely on poll() to set it)
         if timezone := input.get("timezone", None):
             Localization.get().set_timezone(timezone)
@@ -21,12 +26,12 @@ class SchedulerTaskDelete(ApiHandler):
         task_id: str = input.get("task_id", "")
 
         if not task_id:
-            return {"error": "Missing required field: task_id"}
+            return error_payload("Missing required field: task_id.")
 
         # Check if the task exists first
         task = scheduler.get_task_by_uuid(task_id)
         if not task:
-            return {"error": f"Task with ID {task_id} not found"}
+            return error_payload("We could not find that task. Please refresh and try again.", f"Task {task_id} not found")
 
         context = None
         if task.context_id:
@@ -49,4 +54,5 @@ class SchedulerTaskDelete(ApiHandler):
         # Remove the task
         await scheduler.remove_task_by_uuid(task_id)
 
-        return {"success": True, "message": f"Task {task_id} deleted successfully"}
+        PrintStyle.info(f"[scheduler_task_delete] Deleted scheduler task '{task_id}'")
+        return {"ok": True, "data": {"task_id": task_id}}

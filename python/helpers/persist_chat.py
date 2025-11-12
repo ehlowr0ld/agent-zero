@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any
 import uuid
 from agent import Agent, AgentConfig, AgentContext, AgentContextType
-from python.helpers import files, history
+from python.helpers import files, history, projects
 import json
 from initialize import initialize_agent
 
@@ -65,6 +65,13 @@ def load_tmp_chats():
             js = files.read_file(file)
             data = json.loads(js)
             ctx = _deserialize_context(data)
+            try:
+                projects.ensure_context_project_ready(
+                    ctx, source="load_tmp_chats"
+                )
+            except projects.ProjectNotFoundError:
+                # Keep the context loaded but flagged so the UI can surface the issue.
+                pass
             ctxids.append(ctx.id)
         except Exception as e:
             print(f"Error loading chat {file}: {e}")

@@ -22,8 +22,11 @@ class SchedulerTasksList(ApiHandler):
             # Use the scheduler's convenience method for task serialization
             tasks_list = scheduler.serialize_all_tasks()
 
-            return {"tasks": tasks_list}
+            return {"ok": True, "data": tasks_list}
 
-        except Exception as e:
-            PrintStyle.error(f"Failed to list tasks: {str(e)} {traceback.format_exc()}")
-            return {"error": f"Failed to list tasks: {str(e)} {traceback.format_exc()}", "tasks": []}
+        except Exception as exc:
+            PrintStyle.error(f"Failed to list tasks: {exc} {traceback.format_exc()}")
+            return {
+                "ok": False,
+                "error": f"Unable to load scheduler tasks right now. (Technical: {exc})",
+            }

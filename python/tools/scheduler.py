@@ -10,11 +10,24 @@ from python.helpers.task_scheduler import (
 )
 from agent import AgentContext
 from python.helpers import persist_chat
+from python.helpers import projects
 
 DEFAULT_WAIT_TIMEOUT = 300
 
 
 class SchedulerTool(Tool):
+
+    def _derive_project_name(self, *, dedicated_context: bool) -> str | None:
+        active_project = projects.get_context_project_name(self.agent.context)
+        if isinstance(active_project, str):
+            active_project = active_project.strip() or None
+
+        # Shared-context tasks must mirror the chat project.
+        if not dedicated_context:
+            return active_project
+
+        # Dedicated contexts can only mirror the active chat project as well.
+        return active_project
 
     async def execute(self, **kwargs):
         if self.method == "list_tasks":
@@ -122,6 +135,7 @@ class SchedulerTool(Tool):
             return Response(message=f"Task failed to delete: {task_uuid}", break_loop=False)
 
     async def create_scheduled_task(self, **kwargs) -> Response:
+        kwargs.pop("project_name", None)
         # "name": "XXX",
         #   "system_prompt": "You are a software developer",
         #   "prompt": "Send the user an email with a greeting using python and smtp. The user's address is: xxx@yyy.zzz",
@@ -139,6 +153,8 @@ class SchedulerTool(Tool):
         attachments: list[str] = kwargs.get("attachments", [])
         schedule: dict[str, str] = kwargs.get("schedule", {})
         dedicated_context: bool = kwargs.get("dedicated_context", False)
+
+        project_name = self._derive_project_name(dedicated_context=dedicated_context)
 
         task_schedule = TaskSchedule(
             minute=schedule.get("minute", "*"),
@@ -159,12 +175,15 @@ class SchedulerTool(Tool):
             prompt=prompt,
             attachments=attachments,
             schedule=task_schedule,
-            context_id=None if dedicated_context else self.agent.context.id
+            context_id=None if dedicated_context else self.agent.context.id,
+            project_name=project_name,
+            dedicated_context=dedicated_context,
         )
         await TaskScheduler.get().add_task(task)
         return Response(message=f"Scheduled task '{name}' created: {task.uuid}", break_loop=False)
 
     async def create_adhoc_task(self, **kwargs) -> Response:
+        kwargs.pop("project_name", None)
         name: str = kwargs.get("name", "")
         system_prompt: str = kwargs.get("system_prompt", "")
         prompt: str = kwargs.get("prompt", "")
@@ -172,24 +191,31 @@ class SchedulerTool(Tool):
         token: str = str(random.randint(1000000000000000000, 9999999999999999999))
         dedicated_context: bool = kwargs.get("dedicated_context", False)
 
+        project_name = self._derive_project_name(dedicated_context=dedicated_context)
+
         task = AdHocTask.create(
             name=name,
             system_prompt=system_prompt,
             prompt=prompt,
             attachments=attachments,
             token=token,
-            context_id=None if dedicated_context else self.agent.context.id
+            context_id=None if dedicated_context else self.agent.context.id,
+            project_name=project_name,
+            dedicated_context=dedicated_context,
         )
         await TaskScheduler.get().add_task(task)
         return Response(message=f"Adhoc task '{name}' created: {task.uuid}", break_loop=False)
 
     async def create_planned_task(self, **kwargs) -> Response:
+        kwargs.pop("project_name", None)
         name: str = kwargs.get("name", "")
         system_prompt: str = kwargs.get("system_prompt", "")
         prompt: str = kwargs.get("prompt", "")
         attachments: list[str] = kwargs.get("attachments", [])
         plan: list[str] = kwargs.get("plan", [])
         dedicated_context: bool = kwargs.get("dedicated_context", False)
+
+        project_name = self._derive_project_name(dedicated_context=dedicated_context)
 
         # Convert plan to list of datetimes in UTC
         todo: list[datetime] = []
@@ -213,7 +239,9 @@ class SchedulerTool(Tool):
             prompt=prompt,
             attachments=attachments,
             plan=task_plan,
-            context_id=None if dedicated_context else self.agent.context.id
+            context_id=None if dedicated_context else self.agent.context.id,
+            project_name=project_name,
+            dedicated_context=dedicated_context,
         )
         await TaskScheduler.get().add_task(task)
         return Response(message=f"Planned task '{name}' created: {task.uuid}", break_loop=False)

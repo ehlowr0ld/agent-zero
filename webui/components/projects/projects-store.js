@@ -105,19 +105,30 @@ const model = {
 
   async activateProject(name) {
     try {
-      await api.callJsonApi("projects", {
+      const response = await api.callJsonApi("projects", {
         action: "activate",
         context_id: chatsStore.getSelectedChatId(),
         name: name,
       });
-      notifications.toastFrontendSuccess(
-        "Project activated successfully",
-        "Project activated",
-        3,
-        "projects",
-        notifications.NotificationPriority.NORMAL,
-        true
-      );
+      if (response.ok) {
+        notifications.toastFrontendSuccess(
+          "Project activated successfully",
+          "Project activated",
+          3,
+          "projects",
+          notifications.NotificationPriority.NORMAL,
+          true
+        );
+      } else {
+        notifications.toastFrontendError(
+          response.error || "Error activating project",
+          "Error activating project",
+          5,
+          "projects",
+          notifications.NotificationPriority.NORMAL,
+          true
+        );
+      }
     } catch (error) {
       console.error("Error activating project:", error);
       notifications.toastFrontendError(
@@ -134,18 +145,29 @@ const model = {
 
   async deactivateProject() {
     try {
-      await api.callJsonApi("projects", {
+      const response = await api.callJsonApi("projects", {
         action: "deactivate",
         context_id: chatsStore.getSelectedChatId(),
       });
-      notifications.toastFrontendSuccess(
-        "Project deactivated successfully",
-        "Project deactivated",
-        3,
-        "projects",
-        notifications.NotificationPriority.NORMAL,
-        true
-      );
+      if (response.ok) {
+        notifications.toastFrontendSuccess(
+          "Project deactivated successfully",
+          "Project deactivated",
+          3,
+          "projects",
+          notifications.NotificationPriority.NORMAL,
+          true
+        );
+      } else {
+        notifications.toastFrontendError(
+          response.error || "Error deactivating project",
+          "Error deactivating project",
+          5,
+          "projects",
+          notifications.NotificationPriority.NORMAL,
+          true
+        );
+      }
     } catch (error) {
       console.error("Error deactivating project:", error);
       notifications.toastFrontendError(

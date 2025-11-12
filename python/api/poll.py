@@ -1,5 +1,7 @@
 from python.helpers.api import ApiHandler, Request, Response
 
+from python.helpers import projects
+
 from agent import AgentContext, AgentContextType
 
 from python.helpers.task_scheduler import TaskScheduler
@@ -18,9 +20,17 @@ class Poll(ApiHandler):
         timezone = input.get("timezone", get_dotenv_value("DEFAULT_USER_TIMEZONE", "UTC"))
         Localization.get().set_timezone(timezone)
 
+        project_error_contexts: set[str] = set()
         # context instance - get or create only if ctxid is provided
         if ctxid:
             context = self.use_context(ctxid, create_if_not_exists=False)
+            if context:
+                try:
+                    projects.ensure_context_project_ready(
+                        context, source="poll.selected_context"
+                    )
+                except projects.ProjectNotFoundError:
+                    project_error_contexts.add(context.id)
         else:
             context = None
 
@@ -57,8 +67,17 @@ class Poll(ApiHandler):
                 processed_contexts.add(ctx.id)
                 continue
 
+            project_error = False
+            try:
+                projects.ensure_context_project_ready(ctx, source="poll.contexts")
+            except projects.ProjectNotFoundError:
+                project_error = True
+                project_error_contexts.add(ctx.id)
+
             # Create the base context data that will be returned
             context_data = ctx.output()
+            if project_error:
+                context_data["project_error"] = True
 
             context_task = scheduler.get_task_by_uuid(ctx.id)
             # Determine if this is a task-dedicated context by checking if a task with this UUID exists
@@ -106,7 +125,7 @@ class Poll(ApiHandler):
 
         # data from this server
         return {
-            "deselect_chat": ctxid and not context,
+            "deselect_chat": bool(ctxid and not context),
             "context": context.id if context else "",
             "contexts": ctxs,
             "tasks": tasks,
@@ -119,4 +138,5 @@ class Poll(ApiHandler):
             "notifications": notifications,
             "notifications_guid": notification_manager.guid,
             "notifications_version": len(notification_manager.updates),
+            "project_error_contexts": list(project_error_contexts),
         }

@@ -102,6 +102,16 @@ export async function sendMessage() {
       if (!jsonResponse) {
         toast("No response returned.", "error");
       } else {
+        if (jsonResponse.ok === false) {
+          const errorMessage =
+            jsonResponse.error || "Unable to send the message.";
+          toast(errorMessage, "error", 10000);
+          if (typeof message === "string" && message.length > 0) {
+            chatInputEl.value = message;
+            adjustTextareaHeight();
+          }
+          return;
+        }
         setContext(jsonResponse.context);
       }
     }

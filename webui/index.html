@@ -393,6 +393,49 @@
                                             </select>
                                         </div>
 
+                                        <!-- Context Type -->
+                                        <div class="scheduler-form-field">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Context</label>
+                                                <div class="scheduler-form-help">Where this task runs</div>
+                                            </div>
+                                            <div class="scheduler-context-info">
+                                                <span class="scheduler-context-type"
+                                                    x-text="getTaskContextTypeLabel(editingTask)"></span>
+                                                <span class="scheduler-context-hint"
+                                                    x-show="!isEditingTaskDedicated()"
+                                                    x-text="contextHint(editingTask)"></span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Project Selection -->
+                                        <div class="scheduler-form-field">
+                                            <div class="label-help-wrapper">
+                                                <label class="scheduler-form-label">Project</label>
+                                                <div class="scheduler-form-help"
+                                                    x-text="projectSelectorHelpText()"></div>
+                                            </div>
+                                            <div class="scheduler-project-selector">
+                                                <select x-model="editingTask.project_name"
+                                                    :disabled="isProjectSelectorLocked()">
+                                                    <template x-for="option in getProjectOptions()" :key="option.value">
+                                                        <option :value="option.value" x-text="option.label"></option>
+                                                    </template>
+                                                </select>
+                                                <div class="scheduler-project-preview">
+                                                    <span class="scheduler-project-color"
+                                                        :style="getProjectStyle(editingTask.project_name)"></span>
+                                                    <span class="scheduler-project-label"
+                                                        x-text="getProjectLabel(editingTask.project_name)"></span>
+                                                </div>
+                                            </div>
+                                            <div class="scheduler-project-locked-note"
+                                                x-show="isProjectSelectorLocked()">
+                                                Project selection is managed by the chat. Activate the desired project
+                                                in the chat header to change it.
+                                            </div>
+                                        </div>
+
                                         <!-- Task State in Create Form - Add after Task Type -->
                                         <div class="scheduler-form-field" x-show="isCreating">
                                             <div class="label-help-wrapper">
@@ -952,6 +995,9 @@
                                                     <span class="scheduler-sort-indicator" x-show="sortField === 'name'"
                                                         :class="{'scheduler-sort-desc': sortDirection === 'desc'}">↑</span>
                                                 </th>
+                                                <th>
+                                                    Project
+                                                </th>
                                                 <th @click="changeSort('state')">
                                                     State
                                                     <span class="scheduler-sort-indicator"
@@ -974,6 +1020,14 @@
                                                 <tr @click="showTaskDetail(task.uuid)">
                                                     <td>
                                                         <span x-text="task.name"></span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="scheduler-project-badge">
+                                                            <span class="scheduler-project-color"
+                                                                :style="getProjectStyle(task.project_name)"></span>
+                                                            <span class="scheduler-project-label"
+                                                                x-text="getProjectLabel(task.project_name)"></span>
+                                                        </div>
                                                     </td>
                                                     <td>
                                                         <span class="scheduler-status-badge"
@@ -1053,6 +1107,25 @@
                                             <div class="scheduler-details-label">Type:</div>
                                             <div class="scheduler-details-value"
                                                 x-text="selectedTaskForDetail ? selectedTaskForDetail.type : ''"></div>
+
+                                            <div class="scheduler-details-label">Project:</div>
+                                            <div class="scheduler-details-value">
+                                                <div class="scheduler-project-badge">
+                                                    <span class="scheduler-project-color"
+                                                        :style="getProjectStyle(selectedTaskForDetail ? selectedTaskForDetail.project_name : null)"></span>
+                                                    <span class="scheduler-project-label"
+                                                        x-text="getProjectLabel(selectedTaskForDetail ? selectedTaskForDetail.project_name : null)"></span>
+                                                </div>
+                                            </div>
+
+                                            <div class="scheduler-details-label">Context:</div>
+                                            <div class="scheduler-details-value">
+                                                <span
+                                                    x-text="getTaskContextTypeLabel(selectedTaskForDetail)"></span>
+                                                <span class="scheduler-context-hint"
+                                                    x-show="selectedTaskForDetail && !selectedTaskForDetail.dedicated_context"
+                                                    x-text="contextHint(selectedTaskForDetail)"></span>
+                                            </div>
 
                                             <div class="scheduler-details-label">Created:</div>
                                             <div class="scheduler-details-value"

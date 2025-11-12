@@ -15,17 +15,20 @@ nest_asyncio.apply()
 from crontab import CronTab
 from pydantic import BaseModel, Field, PrivateAttr
 
-from agent import Agent, AgentContext, UserMessage
+from agent import AgentContext, UserMessage
 from initialize import initialize_agent
 from python.helpers.persist_chat import save_tmp_chat
 from python.helpers.print_style import PrintStyle
 from python.helpers.defer import DeferredTask
 from python.helpers.files import get_abs_path, make_dirs, read_file, write_file
+from python.helpers import projects
+from python.helpers.projects import ProjectSyncError
 from python.helpers.localization import Localization
 import pytz
 from typing import Annotated
 
 SCHEDULER_FOLDER = "tmp/scheduler"
+_UNSET = object()
 
 # ----------------------
 # Task Models
@@ -128,12 +131,32 @@ class BaseTask(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_run: datetime | None = None
     last_result: str | None = None
+    project_name: Optional[str] = Field(default=None)
 
     def __init__(self, *args, **kwargs):
+        dedicated_requested = kwargs.pop("dedicated_context", None)
+        project_name_value = kwargs.get("project_name")
         super().__init__(*args, **kwargs)
         if not self.context_id:
+            # Dedicated tasks historically stored their UUID as the context identifier,
+            # while shared tasks persist the originating chat context id.
+            self.context_id = self.uuid
+        if project_name_value is not None or self.project_name:
+            normalized = (project_name_value if project_name_value is not None else self.project_name) or ""
+            normalized = normalized.strip()
+            self.project_name = normalized or None
+        else:
+            self.project_name = None
+        if dedicated_requested:
             self.context_id = self.uuid
         self._lock = threading.RLock()
+
+    def is_dedicated_context(self) -> bool:
+        """
+        Dedicated contexts reuse the task UUID as their context identifier.
+        Shared tasks keep the chat context ID assigned when the task was created.
+        """
+        return self.context_id == self.uuid
 
     def update(self,
                name: str | None = None,
@@ -144,6 +167,7 @@ class BaseTask(BaseModel):
                last_run: datetime | None = None,
                last_result: str | None = None,
                context_id: str | None = None,
+               project_name: object = _UNSET,
                **kwargs):
         with self._lock:
             if name is not None:
@@ -169,6 +193,15 @@ class BaseTask(BaseModel):
                 self.updated_at = datetime.now(timezone.utc)
             if context_id is not None:
                 self.context_id = context_id
+                self.updated_at = datetime.now(timezone.utc)
+            if project_name is not _UNSET:
+                if project_name is None:
+                    normalized_project = None
+                elif isinstance(project_name, str):
+                    normalized_project = project_name.strip() or None
+                else:
+                    raise ValueError("project_name must be a string or None")
+                self.project_name = normalized_project
                 self.updated_at = datetime.now(timezone.utc)
             for key, value in kwargs.items():
                 if value is not None:
@@ -243,36 +276,21 @@ class AdHocTask(BaseTask):
         prompt: str,
         token: str,
         attachments: list[str] = list(),
-        context_id: str | None = None
+        context_id: str | None = None,
+        project_name: str | None = None,
+        dedicated_context: bool | None = None
     ):
-        return cls(name=name,
-                   system_prompt=system_prompt,
-                   prompt=prompt,
-                   attachments=attachments,
-                   token=token,
-                   context_id=context_id)
-
-    def update(self,
-               name: str | None = None,
-               state: TaskState | None = None,
-               system_prompt: str | None = None,
-               prompt: str | None = None,
-               attachments: list[str] | None = None,
-               last_run: datetime | None = None,
-               last_result: str | None = None,
-               context_id: str | None = None,
-               token: str | None = None,
-               **kwargs):
-        super().update(name=name,
-                       state=state,
-                       system_prompt=system_prompt,
-                       prompt=prompt,
-                       attachments=attachments,
-                       last_run=last_run,
-                       last_result=last_result,
-                       context_id=context_id,
-                       token=token,
-                       **kwargs)
+        dedicated_flag = dedicated_context if dedicated_context is not None else context_id is None
+        context_value = None if dedicated_flag else context_id
+        return cls(
+            name=name,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            attachments=attachments,
+            token=token,
+            context_id=context_value,
+            project_name=project_name,
+        )
 
 
 class ScheduledTask(BaseTask):
@@ -288,7 +306,9 @@ class ScheduledTask(BaseTask):
         schedule: TaskSchedule,
         attachments: list[str] = list(),
         context_id: str | None = None,
-        timezone: str | None = None
+        timezone: str | None = None,
+        project_name: str | None = None,
+        dedicated_context: bool | None = None
     ):
         # Set timezone in schedule if provided
         if timezone is not None:
@@ -296,34 +316,18 @@ class ScheduledTask(BaseTask):
         else:
             schedule.timezone = Localization.get().get_timezone()
 
-        return cls(name=name,
-                   system_prompt=system_prompt,
-                   prompt=prompt,
-                   attachments=attachments,
-                   schedule=schedule,
-                   context_id=context_id)
+        dedicated_flag = dedicated_context if dedicated_context is not None else context_id is None
+        context_value = None if dedicated_flag else context_id
 
-    def update(self,
-               name: str | None = None,
-               state: TaskState | None = None,
-               system_prompt: str | None = None,
-               prompt: str | None = None,
-               attachments: list[str] | None = None,
-               last_run: datetime | None = None,
-               last_result: str | None = None,
-               context_id: str | None = None,
-               schedule: TaskSchedule | None = None,
-               **kwargs):
-        super().update(name=name,
-                       state=state,
-                       system_prompt=system_prompt,
-                       prompt=prompt,
-                       attachments=attachments,
-                       last_run=last_run,
-                       last_result=last_result,
-                       context_id=context_id,
-                       schedule=schedule,
-                       **kwargs)
+        return cls(
+            name=name,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            attachments=attachments,
+            schedule=schedule,
+            context_id=context_value,
+            project_name=project_name,
+        )
 
     def check_schedule(self, frequency_seconds: float = 60.0) -> bool:
         with self._lock:
@@ -365,36 +369,21 @@ class PlannedTask(BaseTask):
         prompt: str,
         plan: TaskPlan,
         attachments: list[str] = list(),
-        context_id: str | None = None
+        context_id: str | None = None,
+        project_name: str | None = None,
+        dedicated_context: bool | None = None
     ):
-        return cls(name=name,
-                   system_prompt=system_prompt,
-                   prompt=prompt,
-                   plan=plan,
-                   attachments=attachments,
-                   context_id=context_id)
-
-    def update(self,
-               name: str | None = None,
-               state: TaskState | None = None,
-               system_prompt: str | None = None,
-               prompt: str | None = None,
-               attachments: list[str] | None = None,
-               last_run: datetime | None = None,
-               last_result: str | None = None,
-               context_id: str | None = None,
-               plan: TaskPlan | None = None,
-               **kwargs):
-        super().update(name=name,
-                       state=state,
-                       system_prompt=system_prompt,
-                       prompt=prompt,
-                       attachments=attachments,
-                       last_run=last_run,
-                       last_result=last_result,
-                       context_id=context_id,
-                       plan=plan,
-                       **kwargs)
+        dedicated_flag = dedicated_context if dedicated_context is not None else context_id is None
+        context_value = None if dedicated_flag else context_id
+        return cls(
+            name=name,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            plan=plan,
+            attachments=attachments,
+            context_id=context_value,
+            project_name=project_name,
+        )
 
     def check_schedule(self, frequency_seconds: float = 60.0) -> bool:
         with self._lock:
@@ -445,33 +434,54 @@ class SchedulerTaskList(BaseModel):
     tasks: list[Annotated[Union[ScheduledTask, AdHocTask, PlannedTask], Field(discriminator="type")]] = Field(default_factory=list)
     # Singleton instance
     __instance: ClassVar[Optional["SchedulerTaskList"]] = PrivateAttr(default=None)
+    __instance_lock: ClassVar[threading.RLock] = threading.RLock()
 
     # lock: threading.Lock = Field(exclude=True, default=threading.Lock())
 
     @classmethod
     def get(cls) -> "SchedulerTaskList":
-        path = get_abs_path(SCHEDULER_FOLDER, "tasks.json")
-        if cls.__instance is None:
-            if not exists(path):
-                make_dirs(path)
-                cls.__instance = asyncio.run(cls(tasks=[]).save())
+        with cls.__instance_lock:
+            path = get_abs_path(SCHEDULER_FOLDER, "tasks.json")
+            if cls.__instance is None:
+                if not exists(path):
+                    make_dirs(path)
+                    cls.__instance = asyncio.run(cls(tasks=[]).save())
+                else:
+                    cls.__instance = cls.model_validate_json(read_file(path))
             else:
-                cls.__instance = cls.model_validate_json(read_file(path))
-        else:
-            asyncio.run(cls.__instance.reload())
-        return cls.__instance
+                asyncio.run(cls.__instance.reload())
+            return cls.__instance
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._lock = threading.RLock()
 
-    async def reload(self) -> "SchedulerTaskList":
+    def _reload_locked(self) -> None:
         path = get_abs_path(SCHEDULER_FOLDER, "tasks.json")
         if exists(path):
-            with self._lock:
-                data = self.__class__.model_validate_json(read_file(path))
-                self.tasks.clear()
-                self.tasks.extend(data.tasks)
+            data = self.__class__.model_validate_json(read_file(path))
+            self.tasks.clear()
+            self.tasks.extend(data.tasks)
+            updated = False
+            for task in self.tasks:
+                if task.is_dedicated_context() and not task.project_name:
+                    context_id = task.context_id
+                    if not context_id:
+                        continue
+                    context = AgentContext.get(context_id)
+                    if not context:
+                        continue
+                    project_name = context.get_data(projects.CONTEXT_DATA_KEY_PROJECT)
+                    if isinstance(project_name, str) and project_name.strip():
+                        task.project_name = project_name.strip()
+                        task.updated_at = datetime.now(timezone.utc)
+                        updated = True
+            if updated:
+                self._save_locked()
+
+    async def reload(self) -> "SchedulerTaskList":
+        with self._lock:
+            self._reload_locked()
         return self
 
     async def add_task(self, task: Union[ScheduledTask, AdHocTask, PlannedTask]) -> "SchedulerTaskList":
@@ -480,45 +490,99 @@ class SchedulerTaskList(BaseModel):
             await self.save()
         return self
 
-    async def save(self) -> "SchedulerTaskList":
-        with self._lock:
-            # Debug: check for AdHocTasks with null tokens before saving
-            for task in self.tasks:
-                if isinstance(task, AdHocTask):
-                    if task.token is None or task.token == "":
-                        PrintStyle(italic=True, font_color="red", padding=False).print(
-                            f"WARNING: AdHocTask {task.name} ({task.uuid}) has a null or empty token before saving: '{task.token}'"
-                        )
-                        # Generate a new token to prevent errors
-                        task.token = str(random.randint(1000000000000000000, 9999999999999999999))
-                        PrintStyle(italic=True, font_color="red", padding=False).print(
-                            f"Fixed: Generated new token '{task.token}' for task {task.name}"
-                        )
-
-            path = get_abs_path(SCHEDULER_FOLDER, "tasks.json")
-            if not exists(path):
-                make_dirs(path)
-
-            # Get the JSON string before writing
-            json_data = self.model_dump_json()
-
-            # Debug: check if 'null' appears as token value in JSON
-            if '"type": "adhoc"' in json_data and '"token": null' in json_data:
-                PrintStyle(italic=True, font_color="red", padding=False).print(
-                    "ERROR: Found null token in JSON output for an adhoc task"
-                )
-
-            write_file(path, json_data)
-
-            # Debug: Verify after saving
-            if exists(path):
-                loaded_json = read_file(path)
-                if '"type": "adhoc"' in loaded_json and '"token": null' in loaded_json:
+    def _save_locked(self) -> None:
+        # Debug: check for AdHocTasks with null tokens before saving
+        for task in self.tasks:
+            if isinstance(task, AdHocTask):
+                if task.token is None or task.token == "":
                     PrintStyle(italic=True, font_color="red", padding=False).print(
-                        "ERROR: Null token persisted in JSON file for an adhoc task"
+                        f"WARNING: AdHocTask {task.name} ({task.uuid}) has a null or empty token before saving: '{task.token}'"
+                    )
+                    # Generate a new token to prevent errors
+                    task.token = str(random.randint(1000000000000000000, 9999999999999999999))
+                    PrintStyle(italic=True, font_color="red", padding=False).print(
+                        f"Fixed: Generated new token '{task.token}' for task {task.name}"
                     )
 
+        path = get_abs_path(SCHEDULER_FOLDER, "tasks.json")
+        if not exists(path):
+            make_dirs(path)
+
+        # Get the JSON string before writing
+        json_data = self.model_dump_json()
+
+        # Debug: check if 'null' appears as token value in JSON
+        if '"type": "adhoc"' in json_data and '"token": null' in json_data:
+            PrintStyle(italic=True, font_color="red", padding=False).print(
+                "ERROR: Found null token in JSON output for an adhoc task"
+            )
+
+        write_file(path, json_data)
+
+        # Debug: Verify after saving
+        if exists(path):
+            loaded_json = read_file(path)
+            if '"type": "adhoc"' in loaded_json and '"token": null' in loaded_json:
+                PrintStyle(italic=True, font_color="red", padding=False).print(
+                    "ERROR: Null token persisted in JSON file for an adhoc task"
+                )
+
+    async def save(self) -> "SchedulerTaskList":
+        with self._lock:
+            self._save_locked()
+
         return self
+
+    def save_sync(self) -> "SchedulerTaskList":
+        """Synchronous convenience wrapper for save(); use when caller has no event loop."""
+        with self._lock:
+            self._save_locked()
+        return self
+
+    def reload_sync(self) -> "SchedulerTaskList":
+        """Synchronous convenience wrapper for reload(); use in non-async contexts."""
+        with self._lock:
+            self._reload_locked()
+        return self
+
+    def sync_shared_context_project(self, context_id: str, project_name: str | None) -> bool:
+        if not context_id:
+            return False
+        with self._lock:
+            self._reload_locked()
+            updated = False
+            updated_tasks: list[tuple[Union[ScheduledTask, AdHocTask, PlannedTask], str | None, datetime]] = []
+            for task in self.tasks:
+                if task.context_id != context_id:
+                    continue
+                if task.is_dedicated_context():
+                    continue
+                if task.project_name != project_name:
+                    updated_tasks.append((task, task.project_name, cast(datetime, task.updated_at)))
+                    task.project_name = project_name
+                    task.updated_at = datetime.now(timezone.utc)
+                    updated = True
+            if updated:
+                try:
+                    PrintStyle.info(
+                        f"[TaskScheduler.sync_shared_context_project] Updating {len(updated_tasks)} shared tasks "
+                        f"for context '{context_id}' to project '{project_name or 'None'}'"
+                    )
+                    self._save_locked()
+                    PrintStyle.success(
+                        f"[TaskScheduler.sync_shared_context_project] Persisted shared-context project sync "
+                        f"for context '{context_id}'"
+                    )
+                except Exception as exc:
+                    PrintStyle.error(
+                        f"[TaskScheduler.sync_shared_context_project] Failed to persist shared-context project sync "
+                        f"for context '{context_id}': {exc}"
+                    )
+                    for task, previous_project, previous_updated_at in updated_tasks:
+                        task.project_name = previous_project
+                        task.updated_at = previous_updated_at
+                    raise
+            return updated
 
     async def update_task_by_uuid(
         self,
@@ -553,7 +617,7 @@ class SchedulerTaskList(BaseModel):
 
     def get_tasks(self) -> list[Union[ScheduledTask, AdHocTask, PlannedTask]]:
         with self._lock:
-            return self.tasks
+            return list(self.tasks)
 
     def get_tasks_by_context_id(self, context_id: str, only_running: bool = False) -> list[Union[ScheduledTask, AdHocTask, PlannedTask]]:
         with self._lock:
@@ -601,12 +665,14 @@ class TaskScheduler:
     _tasks: SchedulerTaskList
     _printer: PrintStyle
     _instance = None
+    _instance_lock = threading.RLock()
 
     @classmethod
     def get(cls) -> "TaskScheduler":
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
+        with cls._instance_lock:
+            if cls._instance is None:
+                cls._instance = cls()
+            return cls._instance
 
     def __init__(self):
         # Only initialize if this is a new instance
@@ -624,9 +690,64 @@ class TaskScheduler:
     def get_tasks_by_context_id(self, context_id: str, only_running: bool = False) -> list[Union[ScheduledTask, AdHocTask, PlannedTask]]:
         return self._tasks.get_tasks_by_context_id(context_id, only_running)
 
+    def _normalize_project_name(self, project_name: str | None) -> str | None:
+        if project_name is None:
+            return None
+        if not isinstance(project_name, str):
+            PrintStyle.error(
+                "[TaskScheduler._normalize_project_name] project_name must be a string value"
+            )
+            raise ValueError("project_name must be a string")
+        normalized = project_name.strip()
+        if not normalized:
+            return None
+        try:
+            projects.load_basic_project_data(normalized)
+        except projects.ProjectNotFoundError as exc:
+            PrintStyle.error(
+                f"[TaskScheduler._normalize_project_name] Project '{normalized}' not found: {exc}"
+            )
+            raise ValueError(str(exc)) from exc
+        return normalized
+
+    def _activate_project_or_raise(self, context_id: str, project_name: str, *, source: str) -> None:
+        try:
+            projects.activate_project(context_id, project_name)
+        except projects.ProjectNotFoundError as exc:
+            message = (
+                f"Project '{project_name}' could not be activated because it no longer exists. "
+                f"(Technical: {exc})"
+            )
+            PrintStyle.error(f"[{source}] {message}")
+            raise ProjectSyncError(message, context_id=context_id, project_name=project_name) from exc
+        except ProjectSyncError as exc:
+            PrintStyle.error(f"[{source}] {exc}")
+            raise
+        except Exception as exc:
+            message = (
+                f"Unable to activate project '{project_name}' for this task. "
+                f"(Technical: {exc})"
+            )
+            PrintStyle.error(f"[{source}] {message}")
+            raise ProjectSyncError(message, context_id=context_id, project_name=project_name) from exc
+        PrintStyle.info(
+            f"[{source}] Activated project '{project_name}' for context '{context_id}'"
+        )
+
     async def add_task(self, task: Union[ScheduledTask, AdHocTask, PlannedTask]) -> "TaskScheduler":
+        task.project_name = self._normalize_project_name(task.project_name)
         await self._tasks.add_task(task)
-        ctx = await self._get_chat_context(task)  # invoke context creation
+        try:
+            ctx = await self._get_chat_context(task)  # invoke context creation
+            if task.is_dedicated_context() and task.project_name:
+                self._activate_project_or_raise(ctx.id, task.project_name, source="TaskScheduler.add_task")
+            elif not task.is_dedicated_context():
+                context_id = task.context_id
+                if context_id:
+                    self._tasks.sync_shared_context_project(cast(str, context_id), task.project_name)
+        except Exception:
+            await self._tasks.remove_task_by_uuid(task.uuid)
+            raise
         return self
 
     async def remove_task_by_uuid(self, task_uuid: str) -> "TaskScheduler":
@@ -701,6 +822,9 @@ class TaskScheduler:
 
         Returns the updated task or None if not found.
         """
+        if "project_name" in update_params:
+            update_params["project_name"] = self._normalize_project_name(update_params["project_name"])
+
         def _update_task(task):
             task.update(**update_params)
 
@@ -708,6 +832,26 @@ class TaskScheduler:
 
     async def update_task(self, task_uuid: str, **update_params) -> Union[ScheduledTask, AdHocTask, PlannedTask] | None:
         return await self.update_task_checked(task_uuid, lambda task: True, **update_params)
+
+    def sync_shared_context_project(self, context_id: str, project_name: str | None) -> bool:
+        normalized = self._normalize_project_name(project_name) if project_name is not None else None
+        return self._tasks.sync_shared_context_project(context_id, normalized)
+
+    def get_tasks_by_project_name(
+        self, project_name: str
+    ) -> list[Union[ScheduledTask, AdHocTask, PlannedTask]]:
+        """
+        Return all tasks that reference the given project name.
+        """
+        if not project_name:
+            return []
+        normalized = project_name.strip()
+        if not normalized:
+            return []
+        return [
+            task for task in self._tasks.get_tasks()
+            if task.project_name == normalized
+        ]
 
     async def __new_context(self, task: Union[ScheduledTask, AdHocTask, PlannedTask]) -> AgentContext:
         if not task.context_id:
@@ -733,11 +877,10 @@ class TaskScheduler:
             )
             save_tmp_chat(context)
             return context
-        else:
-            self._printer.print(
-                f"Scheduler Task {task.name} loaded from task {task.uuid} but context not found"
-            )
-            return await self.__new_context(task)
+        self._printer.print(
+            f"Scheduler Task {task.name} loaded from task {task.uuid} but context not found"
+        )
+        return await self.__new_context(task)
 
     async def _persist_chat(self, task: Union[ScheduledTask, AdHocTask, PlannedTask], context: AgentContext):
         if context.id != task.context_id:
@@ -777,6 +920,24 @@ class TaskScheduler:
 
                 context = await self._get_chat_context(current_task)
                 AgentContext.use(context.id)
+
+                if current_task.is_dedicated_context() and current_task.project_name:
+                    try:
+                        self._activate_project_or_raise(
+                            context.id,
+                            current_task.project_name,
+                            source="TaskScheduler._run_task",
+                        )
+                    except ProjectSyncError as exc:
+                        await self.update_task(
+                            current_task.uuid,
+                            state=TaskState.ERROR,
+                            last_result=f"ERROR: {exc}",
+                        )
+                        PrintStyle.error(
+                            f"[TaskScheduler._run_task] Project activation failed for task '{current_task.name}': {exc}"
+                        )
+                        raise
 
                 # Ensure the context is properly registered in the AgentContext._contexts
                 # This is critical for the polling mechanism to find and stream logs
@@ -1042,7 +1203,9 @@ def serialize_task(task: Union[ScheduledTask, AdHocTask, PlannedTask]) -> Dict[s
         "last_run": serialize_datetime(task.last_run),
         "next_run": serialize_datetime(task.get_next_run()),
         "last_result": task.last_result,
-        "context_id": task.context_id
+        "context_id": task.context_id,
+        "project_name": task.project_name,
+        "dedicated_context": task.is_dedicated_context(),
     }
 
     # Add type-specific fields
@@ -1106,7 +1269,8 @@ def deserialize_task(task_data: Dict[str, Any], task_class: Optional[Type[T]] = 
         "updated_at": parse_datetime(task_data.get("updated_at")),
         "last_run": parse_datetime(task_data.get("last_run")),
         "last_result": task_data.get("last_result"),
-        "context_id": task_data.get("context_id")
+        "context_id": task_data.get("context_id"),
+        "project_name": task_data.get("project_name"),
     }
 
     # Add type-specific fields
