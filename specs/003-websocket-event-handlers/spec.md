@@ -501,3 +501,42 @@ Align backend and frontend capabilities for emitting, requesting, and aggregatin
 ### Session Tracking Details
 
 - Special bucket `allUsers` holds all tracked SIDs (single-user deployment). Provide helper `get_sids_for_user(user=null)` which currently ignores `user` (placeholder for future multi-tenant evolution). Internal mappings remain private.
+
+---
+
+## Enhancement: Handler Singleton, Dispatcher Concurrency & Diagnostics (2025-11-18)
+
+### Objective
+Strengthen handler lifecycle guarantees, document dispatch concurrency expectations, add developer-controlled diagnostics, and introduce symmetric lifecycle events for reconnect/disconnect flows.
+
+### Functional Requirements
+- **FR-SG-001 (Handler Singleton)**: `WebSocketHandler` becomes a singleton. Subclasses expose `get_instance()` which lazily creates and caches the instance. Calling the subclass constructor directly MUST raise `SingletonInstantiationError` that names the offending class. Auto-discovery and manual registration code (e.g., `run_ui.py`) MUST exclusively use `get_instance()`.
+- **FR-SG-002 (Manager Registration)**: `WebSocketManager.register_handlers()` MUST accept singleton instances. Documentation, quickstart, and contracts warn developers not to instantiate handlers directly.
+- **FR-DISPATCH-001 (Non-Blocking Dispatcher & Instrumented Latencies)**: The Socket.IO / uvicorn event loop MUST remain responsive regardless of individual handler behaviour. All handler execution entry points - `process_event`, `on_connect`, and `on_disconnect` - MUST be offloaded from the dispatcher into `DeferredTask` instances (`python/helpers/defer.py`) or an equivalent worker mechanism so that even poorly implemented handlers cannot block the WebSocket bus. The manager MUST expose lightweight latency metrics for these operations that are collected only when an explicit development-mode debug setting is enabled; when this setting is disabled (default), the instrumentation MUST impose effectively zero overhead and MUST NOT affect production runtimes.
+- **FR-DISPATCH-002 (Locking Guidance)**: Clarify that manager-level registration and shared routing structures remain protected by the shared `threading.RLock`, while per-handler shared state requires handler-specific synchronization (e.g., handler-local `RLock`). Contracts must call out explicitly that locking strategy inside handlers is the handler author's responsibility, and that central offloading only guarantees bus responsiveness, not correctness of handler-specific shared state.
+- **FR-LIFE-001 (Reconnect & Disconnect Events)**: Introduce standardized lifecycle events for both reconnect and disconnect notifications. They MUST share the same canonical event identifiers on frontend and backend, fire for every SID, and be delivered asynchronously so handlers cannot block the dispatcher. Reconnect notifications remain always-on (no toggle). Disconnect notifications MUST be emitted as soon as connection loss is detected.
+- **FR-LOG-001 (Uvicorn Access Log Toggle)**: Add a Developer Settings toggle that lets engineers temporarily enable uvicorn access logs. Default remains off. The toggle persists per developer profile and only affects development runtimes.
+- **FR-DIAG-001 (WebSocket Event Console)**: Provide a Settings → Developer modal that displays dispatcher traffic. Requirements:
+  - Uses the standard Agent Zero modal framework.
+  - Attaches listeners only while open; zero overhead when closed.
+  - Shows both inbound and outbound envelopes with handlerId/eventId/correlationId metadata.
+  - Includes a filter checkbox to show either “all events” or “only events with registered handlers”.
+  - Available only in development mode.
+
+### Non-Functional Requirements
+- **NFR-SG-001**: Singleton enforcement MUST be covered by automated tests that attempt direct instantiation and expect `SingletonInstantiationError`.
+- **NFR-DISPATCH-001**: Concurrency investigation MUST produce metrics or instrumentation proving that dispatcher throughput remains unaffected by individual handler latency, or it MUST land a deferred execution path with regression tests.
+- **NFR-LIFE-001**: Lifecycle events MUST reuse the same envelope schema defined in `contracts/event-schemas.md`.
+- **NFR-DIAG-001**: Diagnostics features (access log toggle, event console) MUST default to disabled and incur no runtime overhead when inactive.
+
+### Documentation & Contract Updates
+- Update `research.md` with findings on singleton implementation strategy, concurrency measurements, and lifecycle event semantics.
+- Extend `plan.md`, `quickstart.md`, `data-model.md`, `tasks.md`, and contracts (`websocket-handler-interface.md`, `frontend-api.md`, `event-schemas.md`, `security-contract.md`) plus `docs/websocket-infrastructure.md` to reflect these new requirements.
+- Add acceptance criteria for uvicorn access log toggling, event console behavior, and lifecycle event delivery.
+
+### Acceptance Criteria
+1. AC-SG-01: All handler subclasses provide `get_instance()`; the manager uses singleton instances exclusively.
+2. AC-SG-02: Instantiating a handler directly raises `SingletonInstantiationError("...SubClass...")`.
+3. AC-DISPATCH-01: Documentation plus tests or instrumentation demonstrate that dispatcher work does not block other components; if deferred tasks are introduced, they must be covered by tests ensuring ordering/correlation semantics remain intact.
+4. AC-LIFE-01: Reconnect and disconnect events fire for every SID, share a well-defined event identifier, and use envelopes compatible with existing subscribers.
+5. AC-DIAG-01: Developer Settings exposes an access log toggle (default off) and a WebSocket Event Console modal that honors the handler-only filter and detaches listeners when closed.

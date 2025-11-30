@@ -501,6 +501,46 @@ websocket.onDisconnect((reason) => {
 
 ---
 
+### Built-in Lifecycle Events
+- `ws_lifecycle_connect`: Fired by the backend whenever a SID connects or reconnects. Subscribe via `websocket.on('ws_lifecycle_connect', callback)`. Payload: `{ sid, connectionCount, timestamp }`.
+- `ws_lifecycle_disconnect`: Fired immediately when the backend detects disconnect. Subscribe via `websocket.on('ws_lifecycle_disconnect', callback)`. Payload: `{ sid, connectionCount, timestamp }`.
+- Both events use the standard envelope `{ handlerId, eventId, correlationId, ts, data }` and are always enabled (no toggle). Callbacks MUST avoid blocking; long work should be deferred to keep dispatcher throughput high.
+
+### Developer Diagnostics Events
+
+- `ws_event_console_subscribe` (client → server request): Sent by the WebSocket Event Console modal when it opens (development mode only). Contract:
+  - Request payload: `{ requestedAt: ISO8601 }`
+  - Response: `{ ok: true, data: { status: 'subscribed', timestamp: requestedAt } }` or `ok: false` with `code: 'NOT_AVAILABLE' | 'SUBSCRIBE_FAILED'`.
+  - Must only be available in development mode; attempting to subscribe elsewhere returns `NOT_AVAILABLE`.
+
+- `ws_event_console_unsubscribe` (client → server request): Sent when the modal closes or destroys.
+  - Request payload: `{}`.
+  - Response: `{ ok: true, data: { status: 'unsubscribed' } }`.
+  - The backend also unsubscribes automatically if the SID disconnects before this call.
+
+- `ws_dev_console_event` (server → client broadcast): Streams diagnostics only when at least one SID subscribes.
+  - Payload summary:
+    ```json
+    {
+      "kind": "lifecycle" | "inbound" | "outbound",
+      "eventType": "ws_tester_request",
+      "sid": "sid-123",
+      "correlationId": "abc123",
+      "timestamp": "2025-11-23T10:45:00.123Z",
+      "handlerId": "python.helpers.websocket_manager.WebSocketManager",
+      "resultSummary": { "handlerCount": 1, "ok": 1, "error": 0, "handlers": [...] },
+      "payloadSummary": { "foo": "bar", "__sizeBytes__": 42 },
+      "delivered": true,
+      "buffered": false,
+      "targets": ["sid-456"],
+      "targetCount": 1
+    }
+    ```
+  - Delivered using the standard server envelope; consumers SHOULD call `validateServerEnvelope` before rendering entries.
+  - The manager stops emitting diagnostics automatically once all watchers unsubscribe, guaranteeing zero runtime overhead when the modal is closed.
+
+---
+
 ### `onError()`
 
 **Purpose**: Register callback for error events

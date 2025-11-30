@@ -438,6 +438,81 @@ websocket.on('error', (error) => {
 
 ---
 
+#### `ws_lifecycle_connect` (Lifecycle)
+
+**Direction**: Server → Client
+**Purpose**: Notify subscribers that a SID successfully established (or re-established) a connection. Always enabled.
+
+**Schema**:
+```json
+{
+  "sid": "wscd123",
+  "connectionCount": 3,
+  "timestamp": "2025-11-18T10:45:00.123Z"
+}
+```
+
+Subscribers receive the standard envelope `{ handlerId, eventId, correlationId, ts, data }`. The `data` payload matches the schema above.
+
+---
+
+#### `ws_lifecycle_disconnect` (Lifecycle)
+
+**Direction**: Server → Client
+**Purpose**: Notify subscribers that a SID disconnected (graceful or abrupt). Mirrors `ws_lifecycle_connect` semantics.
+
+**Schema**:
+```json
+{
+  "sid": "wscd123",
+  "connectionCount": 2,
+  "timestamp": "2025-11-18T10:45:10.456Z"
+}
+```
+
+Like `ws_lifecycle_connect`, deliveries use the standard envelope and fire asynchronously so lifecycle handlers cannot block the dispatcher.
+
+---
+
+#### `ws_dev_console_event` (Diagnostics)
+
+**Direction**: Server → Client (development mode only)
+
+**Purpose**: Stream diagnostic metadata (inbound/outbound summaries, lifecycle snapshots) to the WebSocket Event Console while the modal is open.
+
+**Schema**:
+```json
+{
+  "kind": "inbound",
+  "eventType": "dummy",
+  "sid": "sid-1",
+  "correlationId": "abc123",
+  "timestamp": "2025-11-18T10:45:00.123Z",
+  "handlerId": "python.websocket_handlers.dev.DevWebsocketTestHandler",
+  "resultSummary": {
+    "handlerCount": 1,
+    "ok": 1,
+    "error": 0,
+    "handlers": [
+      {"handlerId": "python.websocket_handlers.dummy.DummyHandler", "ok": true, "durationMs": 2.1}
+    ]
+  },
+  "payloadSummary": {"payload": "dict(2)", "__sizeBytes__": 64},
+  "delivered": true,
+  "buffered": false,
+  "targets": ["sid-2"],
+  "targetCount": 1
+}
+```
+
+**Subscription Flow**:
+- Clients emit `ws_event_console_subscribe` (request-response) and `ws_event_console_unsubscribe` when closing the modal.
+- The manager tracks watcher SIDs and only emits diagnostics while at least one subscriber exists, ensuring there is zero runtime overhead when the console is closed.
+
+All diagnostics use the same server→client delivery envelope (`handlerId`, `eventId`, `correlationId`, `ts`, `data`) so the frontend can reuse `validateServerEnvelope`.
+
+---
+
 ### Application Event Examples
 
 These are example schemas for application-level events. Actual events defined by handlers.

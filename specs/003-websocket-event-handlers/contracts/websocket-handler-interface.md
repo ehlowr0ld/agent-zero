@@ -29,6 +29,22 @@ def __init__(self, socketio: SocketIO, lock: threading.RLock):
     self.lock = lock
 ```
 
+**Singleton Factory**:
+```python
+@classmethod
+def get_instance(cls) -> "WebSocketHandler":
+    """
+    Return the singleton instance of the handler.
+    Implementations MUST call this instead of invoking the constructor.
+    Direct instantiation MUST raise SingletonInstantiationError(cls.__name__).
+    """
+```
+
+**Contract**:
+- Each handler subclass is a singleton. The framework (auto-discovery, manual wiring, tests) MUST call `cls.get_instance()` to obtain the canonical object.
+- Calling `Subclass()` directly MUST raise `SingletonInstantiationError("Subclass")`. This guarantees consistent lifecycle hooks and shared state.
+- A helper `cls._reset_instance_for_testing()` exists for unit tests; call it before invoking `get_instance()` when you need a fresh singleton.
+
 ---
 
 ## Required Class Methods (Declarative Configuration)
@@ -162,6 +178,8 @@ async def process_event(
 - MAY access `self.lock` for thread synchronization
 - MAY access `self.log` for logging (PrintStyle)
 - MAY call `emit_to()` or `broadcast()` to send events to clients
+- MUST cooperate with dispatcher concurrency guarantees. Handlers performing expensive CPU-bound work MUST offload via `DeferredTask` or equivalent so the Socket.IO dispatcher remains responsive. Future instrumentation may wrap handler execution; implementations MUST remain compatible with deferred execution.
+- Registration-level locking is handled by the shared `threading.RLock` in the manager; per-handler shared state remains the handler author’s responsibility.
 
 **Behavior**:
 - Called by WebSocketManager when event of subscribed type received
@@ -366,6 +384,10 @@ async def request_all(
 ---
 
 ### 5. Result Builder Utilities (Developer Ergonomics)
+## Developer Diagnostics & Event Console Integration
+
+- `WebSocketManager.register_diagnostic_watcher(sid)` / `unregister_diagnostic_watcher(sid)` allow developer tooling (e.g., the Event Console modal) to stream diagnostic payloads (`ws_dev_console_event`) only while the UI is open. These APIs are gated to development runtimes and automatically clear subscriptions on disconnect.
+- The manager emits lifecycle broadcasts (`ws_lifecycle_connect` / `ws_lifecycle_disconnect`) and includes diagnostic metadata for every inbound/outbound delivery (correlation IDs, handler durations, buffering status). Handlers do not need to emit their own lifecycle events—use the shared manager helpers.
 
 Handlers MUST NOT hand-craft `RequestResultItem` dictionaries. Instead expose convenience builders that return objects recognised by the manager.
 

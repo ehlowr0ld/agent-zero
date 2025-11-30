@@ -199,6 +199,8 @@ class MyHandler(WebSocketHandler):
     # Handlers may implement internal fan-out and aggregation when appropriate
 ```
 
+> **Singleton reminder**: Handlers are now singletons. Always obtain a reference via `MyHandler.get_instance()` (the manager does this automatically during discovery). Instantiating `MyHandler()` directly raises `SingletonInstantiationError`. This keeps shared state (locks, caches) consistent across reconnects.
+
 ## Backend: Multiple Handlers per Event
 
 Register two handlers for the same event type; both will execute on request‑response, and results will be aggregated.
@@ -996,3 +998,7 @@ A WebSocket validation harness is available under **Settings → Developer → W
 4. Review the **Last Aggregated Results** and **Recent Broadcast Payloads** panels after tests to inspect raw data.
 
 To observe multi-tab behaviour, open a second browser tab before running the broadcast or requestAll tests. When finished, use the **Clear** button to reset the log.
+
+### New Diagnostics (Development Mode Only)
+- **Uvicorn Access Log Toggle**: Settings → Developer now exposes a toggle that temporarily turns uvicorn access logs on/off. Leave it off for normal work; enable only when investigating transport-level issues. The toggle persists per developer profile and has no effect outside development mode.
+- **WebSocket Event Console**: A companion modal captures inbound/outbound envelopes (with handlerId/eventId/correlationId metadata) while open. Opening the modal triggers a `ws_event_console_subscribe` request so the manager streams `ws_dev_console_event` diagnostics; closing it (or navigating away) emits `ws_event_console_unsubscribe`, ensuring there is zero overhead when the console is closed. Use the checkbox to switch between “all events” and “only events with registered handlers”.

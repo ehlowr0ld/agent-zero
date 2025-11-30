@@ -716,3 +716,33 @@ All technical unknowns resolved. Ready to proceed to Phase 1 (Design & Contracts
 - Asymmetric filter options reduce ambiguity and design complexity while covering core use cases.
 - Standardized aggregator errors ensure consistent client handling across per‑sid results.
 - Session hooks document future multi‑tenant readiness without changing single‑user behavior.
+
+---
+
+## Research Addendum (2025-11-18) — Handler Singleton, Dispatcher Concurrency & Diagnostics
+
+### Handler Singleton Strategy
+- **Options considered**: metaclass-based enforcement vs. explicit factory (`get_instance()`).
+- **Decision**: adopt `get_instance()` on `WebSocketHandler`. The factory lazily instantiates the subclass, caches the result, and returns the singleton. Attempting to invoke `DerivedHandler()` directly raises `SingletonInstantiationError("DerivedHandler")`.
+- **Rationale**: explicit factory keeps transparency (Constitution Principle II) and avoids metaclass complexity while providing deterministic lifecycle hooks for shared state. Auto-discovery in `run_ui.py` will call `cls.get_instance()` for every subclass.
+
+### Dispatcher Concurrency Investigation
+- **Current behavior**: `WebSocketManager.route_event()` uses `asyncio.gather` to await all handler coroutines concurrently but still runs inside the Socket.IO event task.
+- **Risk**: a handler performing blocking work (CPU-bound sync calls, long I/O without `await`) can still stall the dispatcher, potentially delaying other events and heartbeat processing.
+- **Action items**:
+  - Instrument routing to capture per-event latency and verify whether other subsystems starve under heavy handler load.
+  - If blocking is confirmed, execute handler work inside `DeferredTask` (`python/helpers/defer.py`) so the dispatcher quickly returns while handlers run in dedicated threads.
+  - Document locking expectations: the manager’s registration path remains protected by the shared `threading.RLock`, while handlers must handle their own concurrency needs for shared state.
+
+### Lifecycle Event Symmetry
+- Need to complement the existing reconnect broadcast with a mirrored disconnect event that shares a canonical identifier on frontend/backed. Both events must leverage the standard envelope `{ handlerId, eventId, correlationId, ts, data }` and be emitted asynchronously (potentially via `DeferredTask`) to prevent blocking.
+
+### Developer Diagnostics
+- **Uvicorn access logs**: Provide a developer setting to toggle uvicorn `access_log` on demand (default off). Toggle affects only development runtimes and persists in settings.
+- **WebSocket Event Console**: Implement a modal console (Agent Zero modal infrastructure) that displays dispatcher traffic. Requirements gathered:
+  - Filter checkbox: “log all events” vs. “only events routed to registered handlers”.
+  - Console attaches listeners only while open, ensuring zero overhead when closed.
+  - Displays inbound/outbound envelopes including handlerId/eventId/correlationId metadata for troubleshooting.
+  - Visualizes real-time dispatcher latency metrics (collected via manager) to detect blocking handlers.
+
+These findings drive the new specification addendum and implementation tasks captured in `plan.md` and `tasks.md`.

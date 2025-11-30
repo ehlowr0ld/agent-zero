@@ -171,42 +171,50 @@
 - [x] T063-Test [P] [US-Polish] Cross-cutting tests: error shape equivalence, server-side 50MB reject path, buffer expiration (~1h), heartbeat/keepalive stability with configured ping intervals/timeouts, developer harness visibility gated to development runtime (backend sections + frontend template)
 - [x] T064-Run [US-Polish] Execute cross‑cutting tests
 - [x] T140 [US-Polish] Backend result/envelope helper utilities (`python/helpers/websocket.py`, `python/helpers/websocket_manager.py`)
-- Create helper factories on `WebSocketHandler` (e.g., `WebSocketResult.ok()` / `.error()`) so handlers never build raw dictionaries.
-- Update `WebSocketManager` to accept helper instances, enforce schema validation, and surface descriptive errors.
-- Provide migration guidance within backend helpers without touching frontend harness code (handled in T145).
+  - Create helper factories on `WebSocketHandler` (e.g., `WebSocketResult.ok()` / `.error()`) so handlers never build raw dictionaries.
+  - Update `WebSocketManager` to accept helper instances, enforce schema validation, and surface descriptive errors.
+  - Provide migration guidance within backend helpers without touching frontend harness code (handled in T145).
 
 - [x] T141-Test [US-Polish] Backend helper coverage (`tests/test_websocket_manager.py`, `tests/test_websocket_handlers.py`)
-- Unit test helper factories for success/error cases, correlation preservation, and duration metadata.
-- Extend manager tests to exercise helper-produced payloads and validation failures.
-- Create new `tests/test_websocket_handlers.py` for handler-focused helper tests (in addition to `tests/test_websocket_manager.py`).
+  - Unit test helper factories for success/error cases, correlation preservation, and duration metadata.
+  - Extend manager tests to exercise helper-produced payloads and validation failures.
+  - Create new `tests/test_websocket_handlers.py` for handler-focused helper tests (in addition to `tests/test_websocket_manager.py`).
 
 - [x] T142 [US-Polish] Frontend helper utilities and JSDoc exports (`webui/js/websocket.js`)
-- Export shared helpers (`createCorrelationId`, `normalizeProducerOptions`, `validateServerEnvelope`) and adopt them inside the client API without creating a separate helper module.
-- Add TypeScript-style JSDoc blocks so IDEs surface helper signatures and usage guidance.
-- Avoid harness updates here (reserved for T145).
+  - Export shared helpers (`createCorrelationId`, `normalizeProducerOptions`, `validateServerEnvelope`) and adopt them inside the client API without creating a separate helper module.
+  - Add TypeScript-style JSDoc blocks so IDEs surface helper signatures and usage guidance.
+  - Avoid harness updates here (reserved for T145).
 
 - [x] T143-Test [US-Polish] Frontend helper coverage (`webui/components/settings/developer/websocket-test-store.js` automatic suite, browser harness)
-- Extend the existing browser-based harness automation to cover helper validation errors, correlation ID generation, and envelope parsing.
-- Ensure regression tests cover both helper module usage and client integration paths.
-- Exercise flows via `webui/components/settings/developer/websocket-test-store.js` (automatic suite) and assert envelopes/filters end-to-end.
+  - Extend the existing browser-based harness automation to cover helper validation errors, correlation ID generation, and envelope parsing.
+  - Ensure regression tests cover both helper module usage and client integration paths.
+  - Exercise flows via `webui/components/settings/developer/websocket-test-store.js` (automatic suite) and assert envelopes/filters end-to-end.
 
 - [x] T144 [US-Docs] Documentation & quickstart updates referencing helper APIs (`docs/websocket-infrastructure.md`, `specs/003-websocket-event-handlers/quickstart.md`)
-- Document new helper exports, usage patterns, and migration steps in infrastructure guide and quickstart examples.
-- Update contracts to reference helper-based flows where manual envelopes were previously shown.
+  - Document new helper exports, usage patterns, and migration steps in infrastructure guide and quickstart examples.
+  - Update contracts to reference helper-based flows where manual envelopes were previously shown.
 
 - [x] T145 [US-Polish] Update WebSocket tester harness to consume helpers (`webui/components/settings/developer/websocket-test-store.js`, `python/websocket_handlers/dev_websocket_test_handler.py`)
-- Refactor harness emit/request flows to use frontend/back-end helpers, logging full envelopes for developer feedback.
-- Keep harness UI aligned with helper options (filters, correlation IDs) and remove hand-built payload code.
+  - Refactor harness emit/request flows to use frontend/back-end helpers, logging full envelopes for developer feedback.
+  - Keep harness UI aligned with helper options (filters, correlation IDs) and remove hand-built payload code.
 
 - [x] T146-Test [US-Polish] Refresh automated harness suite (`tests/test_websocket_harness.py`, harness auto-run scripts)
-- Extend pytest coverage and in-browser automatic suite to validate helper adoption, filter semantics, and timeout behavior.
-- Capture run outputs or artifacts for release notes to prove helper integration works end-to-end.
+  - Extend pytest coverage and in-browser automatic suite to validate helper adoption, filter semantics, and timeout behavior.
+  - Capture run outputs or artifacts for release notes to prove helper integration works end-to-end.
 
 - [x] T147 [US-Docs] Revise manual harness instructions/checklists (`docs/websocket-infrastructure.md`, `specs/003-websocket-event-handlers/checklists/requirements.md`)
-- Update manual runbooks and checklists to reference helper-driven workflows and future multi-tenant notes.
-- Ensure documentation highlights how to toggle helper-driven diagnostics during manual testing.
+  - Update manual runbooks and checklists to reference helper-driven workflows and future multi-tenant notes.
+  - Ensure documentation highlights how to toggle helper-driven diagnostics during manual testing.
 
 - [x] T148 [US-Docs]: Error codes checklist and developer hints (no new tooling)
+  - Create a central "Error Codes Registry" in `docs/websocket-infrastructure.md` (table: CODE, Scope, Meaning, Typical Remediation, Example Payloads).
+  - Add inline documentation in backend (`python/helpers/websocket_manager.py`, helpers in `python/helpers/websocket.py`): docstrings/comments near error construction paths (e.g., `_build_error_result`) referencing the registry entries.
+  - Add frontend JSDoc typedefs/union types in `webui/js/websocket.js` to surface known codes as IDE hints (no runtime dependency, no linter rule).
+  - Ensure contracts reference the registry section and that examples use only documented codes.
+
+- [x] T149-Test [US-Polish]: Future multitenancy placeholders (skipped tests)
+  - Add `pytest.mark.skip` tests documenting intended behaviors for `get_sids_for_user(user_id)` and `get_user_for_sid(sid)` once multitenancy lands.
+  - Reference these placeholders from the data-model and spec future-work sections for traceability.
 
 ### Optional Operational Events & Performance (per decisions)
 
@@ -375,6 +383,28 @@ Complete T121–T126 BEFORE starting backend/frontend enhancement work (T110–T
 
 ---
 
+## Phase N — Handler Singleton, Dispatcher Concurrency & Diagnostics
+
+- [x] T150 [US-Enh] Implement `WebSocketHandler.get_instance()` singleton factory and `SingletonInstantiationError`; update tests to cover allowed/forbidden instantiation paths.
+- [x] T151 [P] [US-Enh] Refactor handler discovery/`run_ui.py` registration to use singleton instances exclusively and update docs/contracts to warn against direct instantiation.
+- [x] T152 [US-Enh] Instrument dispatcher latency (profiling, tracing) to document whether handler execution blocks Socket.IO; decide if `DeferredTask` shims are required.
+  - `WebSocketManager` now records per-handler durations and streams them through the diagnostics bus; docs updated with guidance.
+- [x] T153 [US-Enh] If instrumentation reveals blocking, wrap handler execution in `DeferredTask` without breaking correlation/ack semantics; otherwise document evidence that current approach is safe. Clarify locking responsibilities in contracts.
+  - Instrumentation shows async gather completes within loop budget; documentation notes no DeferredTask shim is needed and highlights locking responsibilities.
+- [x] T154 [US-Enh] Add Developer Settings toggle for uvicorn access logs (default off) with persisted preference and runtime plumbing.
+- [x] T155 [US-Enh] Implement symmetric reconnect/disconnect lifecycle events (shared IDs, standard envelopes) emitted asynchronously so long-running handlers cannot block dispatch.
+- [x] T156 [US-Enh] Build the WebSocket Event Console modal (Agent Zero modal infra) with handler-only filter checkbox, inbound/outbound stream display (including latency metrics visualization), and listener attach/detach logic so there is zero overhead when closed.
+- [x] T157 [US-Enh] Update developer harness/docs/tests to cover singleton usage, lifecycle events, access-log toggle, and event console workflows (automatic + manual suites).
+
+---
+
+## Phase 7 — Manual E2E Protocol
+
+- [ ] T070: Manual smoke and scenarios
+  - Multi‑tab broadcast; reconnect after WS CSRF TTL (pre‑POST path); large payload rejection; buffer flush on reconnect; requestAll aggregation
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -444,275 +474,3 @@ T014  # run_ui.py dynamic routing glue
 - [Story] labels map tasks to user stories for traceability
 - Each user story is independently completable and testable
 - Keep tests before implementation where feasible (TDD) and always separate test implementation from execution
-Feature: WebSocket Event Handlers (branch `003-websocket-event-handlers`)
-
-Guideline: Fine‑grained tasks, concise stages, explicit dependencies. Mark parallelizable items with [P]. Keep test implementation and test execution as distinct tasks.
-
-Decisions aligned:
-- Same‑origin upgrade with Flask‑SocketIO in asyncio mode (no eventlet)
-- CSRF preflight via POST `/csrf_token` (sets short‑lived WS flag); reconnect_attempt pre‑POST optimization;
-- 50MB single‑event hard cap with client precheck and server config; recommend chunking ≥10MB
-- Client→Server: emit, request, requestAll; Server→Client: emit_to, broadcast (request‑response S→C remains future work)
-- Per‑sid buffer (max 100), lazy expiration ~1h
-- Prefer `threading.RLock` for handler/manager shared state
-
---
-
-## Phase 0 — Prerequisites (Shared)
-
-T000: Verify Python environment [repo root]
-- Ensure `.venv` active; Python 3.12.x; `pip -V` shows venv path
-
-T001: Verify dependencies [repo root]
-- Confirm `Flask 3.x`, `Flask-SocketIO 5.5.x`, `python-socketio 5.14.x`
-- `requirements.txt` matches; install if needed
-
-T002 [P]: Confirm folders exist
-- `python/helpers/`, `python/websocket_handlers/`, `webui/js/`
-
-Checkpoint: Env and structure ready
-
---
-
-## Phase 1 — Backend Foundation (Blocking)
-
-T010: Initialize Socket.IO in `run_ui.py`
-- Same‑origin upgrade; `async_mode='asgi'`, loggers off, `max_http_buffer_size=50*1024*1024`
-- Expose `socketio` reference
-
-T011: Create `python/helpers/websocket.py`
-- Define `WebSocketHandler` base (async `process_event`, optional `on_connect`/`on_disconnect`)
-- Class methods: `get_event_types()`, `requires_auth()`, `requires_csrf()`
-- Constructor takes `SocketIO`, `threading.RLock`
-
-T012: Create `python/helpers/websocket_manager.py`
-- `WebSocketManager` with: connections registry, routing, buffering (deque per sid, max 100, ~1h lazy expire)
-- APIs: `handle_connect`, `handle_disconnect`, `route_event`, `emit_to`, `broadcast`
-
-T013: Wire Socket.IO events in `run_ui.py`
-- `@socketio.on('connect')` → manager.handle_connect(sid)
-- `@socketio.on('disconnect')` → manager.handle_disconnect(sid)
-
-T014: Dynamic event routing glue in `run_ui.py`
-- Catch application event types; delegate to `manager.route_event(event_type, data, sid, ack)`
-- Use `ack` to satisfy request‑response
-
-T015: Sample handler `python/websocket_handlers/hello_handler.py`
-- Event `hello_request` returns simple result; logs via PrintStyle
-
-T016-Test: Implement unit tests (backend foundation)
-- Import manager/handler; test connect/disconnect, route_event happy path, buffer overflow eviction
-
-T017-Run: Execute tests (backend foundation)
-- Run test suite in venv; capture results
-
-Checkpoint: Foundation compiles, tests pass
-
---
-
-## Phase 2 — Security & CSRF (P1)
-
-T020: Extend `python/api/csrf_token.py` (POST)
-- Validate `X-CSRF-Token` header vs cookie; set `session['ws_csrf_ok']=timestamp`
-- TTL configurable (default 120s)
-
-T021: Enforce CSRF at connect
-- If any registered handler `requires_csrf()` → require recent `ws_csrf_ok`; reject otherwise
-
-T022 [P]: Session expiration handling
-- On ping/pong or periodic check, disconnect invalid sessions with reason
-
-T023 [P]: Logging
-- Use PrintStyle for auth/CSRF logs; no noisy spam
-
-T024-Test: Implement unit tests (CSRF flow)
-- POST `/csrf_token` sets flag; connect passes within TTL, fails after TTL; reconnect_attempt optimization path
-
-T025-Run: Execute tests (CSRF flow)
-- Run tests; verify pass/fail
-
-Checkpoint: Secure connection behavior proven
-
---
-
-## Phase 3 — Manager Routing, Buffering, Broadcast (P1)
-
-T030: Implement `route_event` logic (multi‑handler)
-- Lookup list of handlers by event_type; invoke concurrently; aggregate per‑handler results `{ handlerId, ok, data|error }`
-- Fire‑and‑forget remains `None`; treat as `{}` with `ok=true` in results for request‑response
-- Convert exceptions to standardized error objects in results
-
-T031 [P]: Implement buffering and flush on reconnect
-- On connect, flush per‑sid buffer FIFO; drop oldest on overflow; lazy expire policy
-
-T032 [P]: Implement `broadcast(event_type, data, exclude_sids=None)`
-- Loop active sids; buffer where needed; support excluding one or more SIDs
-
-T033 [P]: Implement `emit_to(sid, ...)`
-- Error on unknown sid (never existed); buffer if recently disconnected
-
-T034-Test: Implement unit tests (routing/buffering/broadcast)
-- Success path, exception → error object, buffer flush, exclude_sids honored, emit_to behavior
-
-T035-Run: Execute tests (routing/buffering/broadcast)
-- Run tests; verify pass/fail
-
-Checkpoint: Routing and fan‑out verified
-
---
-
-## Phase 4 — Frontend Client (P2)
-
-T040: Create `webui/js/websocket.js` scaffold
-- Singleton; public API: `connect`, `disconnect`, `isConnected`, `emit`, `request`, `requestAll`, `on`, `off`, `onConnect`, `onDisconnect`, `onError`
-
-T041: Implement `connect()`
-- Preflight POST `/csrf_token` with header; then connect
-- On `reconnect_attempt`, proactively POST `/csrf_token` then retry
-
-T042 [P]: Implement `emit()`
-- Throw on not connected; precheck 50MB limit
-
-T043 [P]: Implement `request()`
-- Promise with timeout and cleanup; reject on not connected, timeout, or server error
-
-T044 [P]: Implement `on()`/`off()` subscriptions
-- Persist across reconnects; multiple callbacks; order preserved
-
-T045: Implement lifecycle callbacks
-- `onConnect`, `onDisconnect`, `onError`
-
-T046-Test: Implement unit tests (frontend API)
-- Size precheck, request timeout, subscription persistence across reconnect, reconnect_attempt optimization path
-
-T047-Run: Execute tests (frontend API)
-- Run the chosen JS test tooling or manual/browser protocol per docs
-
-Checkpoint: Frontend integration behaves correctly
-
---
-
-## Phase 5 — Aggregated Request (requestAll) (P3)
-
-T050: Server aggregation (manager)
-- Fan‑out to all active sids for a request‑type event; correlate; collect results per sid; overall timeout
-- Return `[{ sid, results: RequestResultItem[] }]`
-
-T051 [P]: Client `requestAll()`
-- Call server; return aggregated array; honor timeout; size precheck
-
-T052-Test: Implement unit tests (requestAll)
-- Multiple sids with mixed success/failure; overall timeout; stable ordering by sid; nested per‑handler results
-
-T053-Run: Execute tests (requestAll)
-- Run test suite; verify pass/fail
-
-Checkpoint: Aggregated request works end‑to‑end
-
---
-
-## Phase 6 — Config, Docs, Polish
-
-T060: Engine config review
-- Confirm `max_http_buffer_size=50MB`; leave ping defaults; document override points
-
-T061 [P]: Error surface consistency
-- Same error shape across methods; no traps between client/server
-
-T062 [P]: Logging pass
-- Ensure PrintStyle usage; actionable, non‑spammy messages
-- Error logs emitted regardless of dev flag; verbose/debug logs gated by dev flag
-
-T063-Test: Implement cross-cutting tests (include dev harness gating checks)
-- Error shape equivalence, 50MB server reject path, buffer expiration (~1h) behavior (unit‑style)
-
-T064-Run: Execute tests (cross‑cutting)
-- Run tests; verify
-
-T140 [P]: Backend result/envelope helper utilities
-- Create helper factories on `WebSocketHandler` (e.g., `WebSocketResult.ok()` / `.error()`) so handlers never build raw dictionaries.
-- Update `WebSocketManager` to accept helper instances, enforce schema validation, and surface descriptive errors.
-- Provide migration guidance within backend helpers without touching frontend harness code (handled in T145).
-
-T141-Test: Backend helper coverage
-- Unit test helper factories for success/error cases, correlation preservation, and duration metadata.
-- Extend manager tests to exercise helper-produced payloads and validation failures.
-- Create new `tests/test_websocket_handlers.py` for handler-focused helper tests (in addition to `tests/test_websocket_manager.py`).
-- Coverage threshold: ≥90% lines and ≥90% branches on helper code paths (fail build if below).
-
-T142 [P]: Frontend helper utilities
-- Export shared helpers (`createCorrelationId`, `normalizeProducerOptions`, `validateServerEnvelope`) and adopt them inside the client API without creating a separate helper module.
-- Add TypeScript-style JSDoc blocks so IDEs surface helper signatures and usage guidance.
-- Avoid harness updates here (reserved for T145).
-
-T143-Test: Frontend helper coverage
-- Extend the existing browser-based harness automation to cover helper validation errors, correlation ID generation, and envelope parsing.
-- Ensure regression tests cover both helper module usage and client integration paths.
-- Exercise flows via `webui/components/settings/developer/websocket-test-store.js` (automatic suite) and assert envelopes/filters end-to-end.
-- Keep test execution via browser harness for now (vitest may be introduced later).
-
-T144 [US-Docs]: Documentation & quickstart updates
-- Document new helper exports, usage patterns, and migration steps in infrastructure guide and quickstart examples.
-- Update contracts to reference helper-based flows where manual envelopes were previously shown.
-- Provide a concise intro plus deep guide with patterns; ensure complete and unambiguous coverage without overextension.
-
-T145 [US-Polish] Update WebSocket tester harness (frontend store + backend dev handler) to consume helper utilities and cover new envelope/filter semantics
-- Refactor harness emit/request flows to use frontend/back-end helpers, logging full envelopes for developer feedback.
-- Keep harness UI aligned with helper options (filters, correlation IDs) and remove hand-built payload code.
-
-T146-Test [US-Polish] Refresh automated harness suite (tests/test_websocket_harness.py + in-browser runbook) to validate helper paths and timeout/filter scenarios
-- Extend pytest coverage and in-browser automatic suite to validate helper adoption, filter semantics, and timeout behavior.
-- Capture run outputs or artifacts for release notes to prove helper integration works end-to-end.
-
-T147 [US-Docs] Revise manual harness instructions/checklists (docs/websocket-infrastructure.md, specs/003-websocket-event-handlers/checklists/requirements.md)
-- Update manual runbooks and checklists to reference helper-driven workflows and future multi-tenant notes.
-- Ensure documentation highlights how to toggle helper-driven diagnostics during manual testing.
-
-- [x] T148 [US-Docs]: Error codes checklist and developer hints (no new tooling)
-- Create a central "Error Codes Registry" in `docs/websocket-infrastructure.md` (table: CODE, Scope, Meaning, Typical Remediation, Example Payloads).
-- Add inline documentation in backend (`python/helpers/websocket_manager.py`, helpers in `python/helpers/websocket.py`): docstrings/comments near error construction paths (e.g., `_build_error_result`) referencing the registry entries.
-- Add frontend JSDoc typedefs/union types in `webui/js/websocket.js` to surface known codes as IDE hints (no runtime dependency, no linter rule).
-- Ensure contracts reference the registry section and that examples use only documented codes.
-
-T149-Test [US-Polish]: Future multitenancy placeholders (skipped tests)
-- Add `pytest.mark.skip` tests documenting intended behaviors for `get_sids_for_user(user_id)` and `get_user_for_sid(sid)` once multitenancy lands.
-- Reference these placeholders from the data-model and spec future-work sections for traceability.
-
---
-
-## Phase 7 — Manual E2E Protocol
-
-T070: Manual smoke and scenarios
-- Multi‑tab broadcast; reconnect after WS CSRF TTL (pre‑POST path); large payload rejection; buffer flush on reconnect; requestAll aggregation
-
---
-
-## Dependencies (High Level)
-
-1) Phase 0 → Phase 1
-2) Phase 1 → Phase 2
-3) Phase 1 → Phase 3
-4) Phase 1 → Phase 4; Phase 2 → Phase 4
-5) Phase 3 & 4 → Phase 5
-6) All → Phase 6 → Phase 7
-7) Phase M docs can run in parallel; AC tasks (T100–T104) validate end‑state
-
-Graph (simplified):
-```
-Phase0 → Phase1 → US1(Core) ┐
-                           ├→ Security (Phase2)
-                           ├→ Routing/Broadcast (Phase3)
-                           ├→ Frontend (Phase4)
-                                   └→ Aggregated Request (Phase5)
-→ Polish (Phase6) → Manual E2E (Phase7)
-||
-└→ Phase M (ASGI Migration Docs & AC)
-```
-
---
-
-## Notes
-
-- Server→Client request‑response remains future work (not in this release); only fire‑and‑forget from server side.
-- For payloads near 50MB, prefer chunking (1–4MB) or HTTP uploads; client precheck enforces limit.
-- Reconnect optimization: on `reconnect_attempt`, pre‑POST `/csrf_token` before WS handshake to avoid one failed attempt when flag expired.

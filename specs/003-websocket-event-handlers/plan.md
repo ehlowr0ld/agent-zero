@@ -563,3 +563,41 @@ Reduce friction for backend and frontend developers by centralising construction
 ### Risks & Mitigations
 - Risk: Divergence between helper validation and manager expectations → Mitigation: share schema constants/tests across modules.
 - Risk: Breaking existing manual code paths → Mitigation: provide transitional shims; document migration guidance.
+
+---
+
+## Plan Addendum (2025-11-18): Handler Singleton, Dispatcher Concurrency & Diagnostics
+
+### Objective
+Enforce singleton behavior for all WebSocket handlers, verify (and if needed improve) dispatcher concurrency, surface lifecycle events for reconnect/disconnect symmetry, and deliver developer-facing diagnostics (uvicorn access-log toggle plus WebSocket Event Console) without runtime overhead when disabled.
+
+### Scope Mapping → Deliverables
+1. **Singleton Enforcement**
+   - Update `python/helpers/websocket.py` to provide `get_instance()` and raise `SingletonInstantiationError` on direct instantiation.
+   - Ensure handler discovery/registration (`run_ui.py`, `WebSocketManager.register_handlers`) retrieves singleton instances.
+   - Document new behavior in contracts, quickstart, and docs.
+2. **Dispatcher Concurrency Investigation**
+   - Instrument current `route_event` path to capture latency and starvation metrics.
+   - Produce evidence that dispatcher tasks remain non-blocking, or offload handler execution to `DeferredTask` with accompanying tests and documentation.
+   - Clarify locking guidance (manager protects registration; handlers manage their own shared state).
+3. **Lifecycle Event Symmetry**
+   - Formalize reconnect/disconnect event identifiers shared by frontend and backend, delivered using the standard envelope.
+   - Ensure emissions run asynchronously (deferred if needed) to avoid blocking.
+4. **Developer Diagnostics**
+   - Add a persisted Settings toggle to enable uvicorn access logs (default off).
+   - Build a WebSocket Event Console modal (Agent Zero modal framework) with inbound/outbound stream display, handler-only filter checkbox, and zero overhead when closed.
+
+### Documentation Targets
+- Update `research.md`, `spec.md`, `data-model.md`, `quickstart.md`, `docs/websocket-infrastructure.md`, and contracts (`websocket-handler-interface.md`, `frontend-api.md`, `event-schemas.md`, `security-contract.md`) plus `tasks.md` with new requirements and scenarios.
+
+### Testing & Validation
+- Add unit/integration tests that:
+  - Assert singleton enforcement (`SingletonInstantiationError` raised on direct instantiation).
+  - Capture dispatcher latency metrics or cover the new deferred execution path.
+  - Verify reconnect/disconnect events reach every SID and preserve envelope metadata.
+  - Exercise the WebSocket Event Console and uvicorn access-log toggle in development mode (harness/manual protocol).
+
+### Risks & Mitigations
+- **Risk**: Singleton refactor could break handler state initialization. *Mitigation*: Provide migration guidance, ensure `get_instance()` still runs `__init__` exactly once, and cover with tests.
+- **Risk**: Offloading to `DeferredTask` might complicate correlation handling. *Mitigation*: Reuse existing correlation ID plumbing; add regression tests to ensure ack ordering.
+- **Risk**: Diagnostics toggles accidentally enabled in production. *Mitigation*: Gate features behind `runtime.is_development()` and Settings UI.

@@ -521,6 +521,7 @@ PrintStyle.debug(f"Event routed: {event_type} to {handler_class.__name__}")
 - NO separate security event database (single-user app)
 - Logs written to standard application log
 - No persistent audit trail (not required for single-user)
+- Uvicorn access logs remain disabled by default. A development-only Settings toggle may enable them temporarily for troubleshooting; production deployments MUST leave the toggle off unless explicitly approved by operations.
 
 ---
 

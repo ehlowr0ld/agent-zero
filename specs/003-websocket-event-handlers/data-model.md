@@ -114,6 +114,11 @@ class WebSocketHandler(ABC):
     log: PrintStyle           # Logging interface (initialized in before_execution())
 ```
 
+**Singleton Lifecycle**
+- Handlers are singletons. Each subclass provides `@classmethod def get_instance(cls) -> "WebSocketHandler"` which lazily creates and caches the instance.
+- Calling the subclass constructor directly raises `SingletonInstantiationError(cls.__name__)`. This ensures shared state stays consistent across reconnects and avoids duplicate lifecycle hooks.
+- Auto-discovery and manual registration code MUST call `cls.get_instance()` to obtain the handler reference.
+
 **Class Methods** (declarative configuration):
 ```python
 @classmethod
@@ -182,6 +187,7 @@ def broadcast(self, event_type: str, data: dict, exclude_sids: str | Iterable[st
 - **One handler** → **Many event types** (handler subscribes to multiple types)
 - **One event type** → **Many handlers** (multi‑handler registration supported)
 - **Many handlers** → **One WebSocketManager** (centralized routing)
+- **Lifecycle events**: The manager emits standardized reconnect/disconnect events (shared identifiers on frontend/backend) that all handlers can observe. These events use the same envelope schema and fire asynchronously so slow lifecycle handlers cannot block dispatch.
 
 ---
 
@@ -320,6 +326,39 @@ def get_user_for_sid(self, sid: str) -> str | None:
   - **Helper bodies**: `get_sids_for_user(user_id)` will return a copy of the mapped set when `user_id` is provided; today's behaviour (`allUsers`) becomes the explicit `user_id is None` branch. `get_user_for_sid(sid)` will surface whichever identifier was stored at registration, allowing handlers to rehydrate user context quickly.
   - **Use cases**: Targeting all tabs for a specific account, broadcasting workspace-level notifications, or correlating request responses per tenant. Additional helpers (e.g., `get_users()`, `remove_user(user_id)`) can be layered without breaking callers because the internal map already tracks both directions.
   - **Migration mechanics**: Introduction of multitenant identifiers will not require handler changes. Handlers that currently iterate `get_sids_for_user()` automatically gain tenant scoping once the user argument is passed. Tests will cover single-user (default) and multi-user branches to ensure no regression.
+
+---
+
+### 7. WebSocketManager
+
+**Purpose**: Centralized event routing, buffering, and dispatcher metrics.
+
+**Attributes**:
+```python
+class WebSocketManager:
+    socketio: AsyncServer
+    connections: ConnectionRegistry
+    handlers: dict[str, list[WebSocketHandler]]
+    metrics_enabled: bool = False
+```
+
+**Operations**:
+```python
+def route_event(self, event_type: str, data: dict, sid: str):
+    """Route incoming event to appropriate handlers"""
+
+def broadcast(self, event_type: str, data: dict, exclude_sids=None):
+    """Broadcast event to all active connections"""
+
+def emit_to(self, sid: str, event_type: str, data: dict):
+    """Emit event to specific connection"""
+
+def get_metrics(self) -> dict:
+    """
+    Return dispatcher latency metrics (if collection enabled via dev settings).
+    Returns: {'avg_latency_ms': float, 'p95_latency_ms': float, 'throughput_eps': float} or empty.
+    """
+```
 
 ---
 
