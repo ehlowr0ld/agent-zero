@@ -2,6 +2,7 @@
 
 **Input**: Design documents from `/specs/003-websocket-event-handlers/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/*.md
+**Contracts**: Authoritative contract inventory for this feature is `contracts/*.md` (no repo-level contract target document).
 
 **Tests**: Tests are requested. For each story, test implementation and test execution are distinct tasks (TDD ordering where applicable).
 
@@ -221,7 +222,7 @@
 - [x] T065 [US-Polish] Emit optional `server_restart` broadcast on app start (config‑gated, ON by default)
 - [x] T066-Test [P] [US-Polish] Verify `server_restart` emission only when enabled; no client listeners required
 - [x] T067-Run [US-Polish] Execute `server_restart` tests
-- [x] T068-Test [P] [US-Polish] Perf smoke: broadcast to 50 logical tabs ≤ 300ms; typical push delivery < 300ms (document target <100ms/<200ms)
+- [x] T068-Test [P] [US-Polish] Perf smoke: broadcast to 50 logical tabs ≤ 200ms; typical push delivery < 100ms (non-flaky thresholds; aligns with SC-001/SC-008)
 - [x] T069-Run [US-Polish] Execute perf smoke tests (non‑flaky thresholds)
 
 ---
@@ -400,8 +401,10 @@ Complete T121–T126 BEFORE starting backend/frontend enhancement work (T110–T
 
 ## Phase 7 — Manual E2E Protocol
 
-- [ ] T070: Manual smoke and scenarios
-  - Multi‑tab broadcast; reconnect after WS CSRF TTL (pre‑POST path); large payload rejection; buffer flush on reconnect; requestAll aggregation
+- [ ] T070-US1 [US1] Manual smoke: multi-tab broadcast; buffer flush on reconnect
+- [ ] T070-US2 [US2] Manual smoke: reconnect after WS CSRF TTL (pre-POST path)
+- [ ] T070-Polish [US-Polish] Manual smoke: large payload rejection
+- [ ] T070-US5 [US5] Manual smoke: requestAll aggregation
 
 ---
 

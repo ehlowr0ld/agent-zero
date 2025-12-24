@@ -182,7 +182,7 @@ The system supports broadcasting events to all of the user's connected browser t
 - How should UI components handle errors when sending WebSocket events fails? Error callbacks provide failure reasons; UI can show user-friendly messages, retry automatically, or fall back to HTTP polling
 - How does a handler differentiate between different event types when subscribed to multiple? Event type is passed as a parameter to handler; handler uses conditional logic based on event type
 - What happens when a handler emits an event type that no clients are subscribed to? Event is sent but not delivered; no error occurs; this is normal pub/sub behavior
-- What happens if a request-response event takes too long to process or handler doesn't respond? Client-side timeout (e.g., 30 seconds default) rejects the promise with timeout error; handlers should process requests quickly or emit progress events for long operations (see contracts/event-schemas.md §Handler Execution Timeouts)
+- What happens if a request-response event takes too long to process or handler doesn't respond? Default timeout is `0` ms (unlimited). If `timeoutMs>0`, non-completed handlers are recorded as timeout error result items and the promise resolves with aggregated results (promise rejects only for transport/contract failures); handlers should process requests quickly or emit progress events during long operations (see contracts/event-schemas.md §Handler Execution Timeouts)
 - Can a handler respond to a fire-and-forget emit event? No, emit events are one-way; handlers should not attempt to send responses; use request-response pattern when reply is needed
 - Can handlers programmatically disconnect clients (e.g., for policy violations)? No, only client-initiated disconnection and automatic session expiration trigger disconnects; handlers cannot force-disconnect clients
 
@@ -286,7 +286,7 @@ The system supports broadcasting events to all of the user's connected browser t
 3. **Browser Compatibility**: Target browsers support WebSocket protocol (all modern browsers released in the last 5 years)
 4. **Server Deployment**: The server will run with WebSocket-compatible infrastructure
 5. **Existing Architecture**: The current REST API handler framework and authentication mechanisms are stable and won't undergo major changes during WebSocket implementation; WebSocket will follow existing patterns
-6. **Threading Model**: The existing threading model and lock mechanism can accommodate WebSocket connections without significant architectural changes
+6. **Concurrency Model (ASGI)**: Runtime is ASGI/asyncio-driven (uvicorn + python-socketio.AsyncServer). Shared `threading.RLock` may still guard in-memory registries, but implementations avoid thread-local assumptions and offload blocking work
 7. **Message Volume**: Typical WebSocket event rates will be under 100 events per second per connection for interactive features
 8. **Session Persistence**: Sessions will remain the primary mechanism for user authentication and can be shared between HTTP and WebSocket contexts
 9. **Development Patterns**: Developers are familiar with existing REST API handler patterns and can adopt similar patterns for WebSocket handlers

@@ -194,6 +194,8 @@ All 13 constitutional principles are satisfied. The WebSocket infrastructure des
 - ✅ `contracts/security-contract.md` - Authentication and security patterns
 - ✅ `quickstart.md` - Developer guide with examples
 
+Note: This feature's contract inventory is `./contracts/*.md` (no repo-level contract target document in this repo).
+
 ### Constitution Compliance Verification
 
 **Re-evaluation against all 13 principles after completing design phase**:
